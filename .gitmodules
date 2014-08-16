@@ -1,0 +1,3 @@
+[submodule "openslam_gmapping"]
+	path = openslam_gmapping
+	url = https://github.com/ysuga/openslam_gmapping.git
