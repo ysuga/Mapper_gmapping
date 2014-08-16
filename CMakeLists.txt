@@ -10,6 +10,8 @@ set(PROJECT_VENDOR "ssr")
 set(PROJECT_AUTHOR "ssr")
 set(PROJECT_AUTHOR_SHORT "ssr")
 
+add_subdirectory(openslam_gmapping)
+
 # Add an "uninstall" target
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/cmake/uninstall_target.cmake.in"
     "${PROJECT_BINARY_DIR}/uninstall_target.cmake" IMMEDIATE @ONLY)
@@ -58,6 +60,7 @@ endif(${OpenRTM_FOUND})
 #enable_testing()
 
 # Subdirectories
+
 add_subdirectory(cmake)
 if(BUILD_DOCUMENTATION)
     add_subdirectory(doc)
