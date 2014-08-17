@@ -99,17 +99,36 @@ Mapper_gmappingは ``Mapper_gmappingComp`` を実行（ ``${prefix}/components/b
 パラメータ       データ型           デフォルト値     意味
 ================ ================== ================ ====
 debug            int                0                
-start_map_update_in_activated string             false            
-x_min            double             -10.0            
-x_max            double             10.0             
-y_min            double             -10.0            
-y_max            double             10.0             
-resolution       double             0.05             
-init_pose_x      double             0.0              
-init_pose_y      double             0.0              
-init_pose_th     double             0.0              
-log_dir          string             log_out          
-log_enable       string             log_enable       
+sigma            float              0.05             The sigma used by the greedy endpoint matching
+kernelSize       int                1                The kernel in which to look for a correspondence
+lstep            float              0.05             The optimization step in translation
+astep            float              0.05             The optimization step in rotation
+iterations       int                5                 The number of iterations of the scanmatcher
+lsigma           float              0.075            The sigma of a beam used for likelihood computation
+ogain            float              3.0              Gain to be used while evaluating the likelihood, for smoothing the resampling effects
+lskip            int                0                 Number of beams to skip in each scan.
+minimumScore     float              0.0              Minimum score for considering the outcome of the scan matching good. Can avoid jumping pose estimates in large open spaces when using laser scanners with limited range (e.g. 5m). Scores go up to 600+, try 50 for example when experiencing jumping estimate issues.
+srr              float              0.1              Odometry error in translation as a function of translation (rho/rho)
+srt              float              0.2              Odometry error in translation as a function of rotation (rho/theta)
+str              float              0.1              Odometry error in rotation as a function of translation (theta/rho)
+stt              float              0.05             Odometry error in rotation as a function of rotation (theta/theta)
+linearUpdate     float              1.0              Process a scan each time the robot translates this far
+angularUpdate    float              0.5              Process a scan each time the robot rotates this far
+temporalUpdate   float              -1.0             Process a scan if the last scan proccessed is older than the update time in seconds. A value less than zero will turn time based updates off.
+resampleThreshold float              0.5              The Neff based resampling threshold
+particles        int                30               Number of particles in the filter
+xmin             float              -100             Initial map size
+ymin             float              -100             Initial map size
+xmax             float              100              Initial map size
+ymax             float              100              Initial map size
+delta            float              0.05             Processing parameters (resolution of the map)
+llsamplerange    float              0.01             Translational sampling range for the likelihood
+llsamplestep     float              0.01             Translational sampling step for the likelihood
+lasamplerange    float              0.005            Angular sampling range for the likelihood
+lasamplestep     float              0.005            Angular sampling step for the likelihood
+transform_publish_period float              0.05             How long (in seconds) between transform publications.
+occ_thresh       float              0.25             Threshold on gmapping's occupancy values. Cells with greater occupancy are considered occupied (i.e., set to 100 in the resulting sensor_msgs/LaserScan).
+throttle_scans   int                1                throttle_scans
 ================ ================== ================ ====
 
 ポート

@@ -11,9 +11,12 @@
 
 #include "MobileRobotSkel.h"
 
+// #include "Mapper_gmapping.h"
+
 #ifndef MOBILEROBOTSVC_IMPL_H
 #define MOBILEROBOTSVC_IMPL_H
  
+class Mapper_gmapping;
 /*!
  * @class OGMapperSVC_impl
  * Example class implementing IDL interface RTC::OGMapper
@@ -27,6 +30,11 @@ class OGMapperSVC_impl
    // destructor non-public
    //virtual ~OGMapperSVC_impl();
 
+	 Mapper_gmapping *m_pRTC;
+
+
+public:
+	void setRTC(Mapper_gmapping* pRTC) {m_pRTC = pRTC;}
  public:
   /*!
    * @brief standard constructor
@@ -43,8 +51,8 @@ class OGMapperSVC_impl
    RTC::RETURN_VALUE stopMapping();
    RTC::RETURN_VALUE suspendMapping();
    RTC::RETURN_VALUE resumeMapping();
-  RTC::RETURN_VALUE getState(RTC::MAPPER_STATE& state);
-  RTC::RETURN_VALUE requestCurrentBuiltMap(RTC::OGMap_out map);
+   RTC::RETURN_VALUE getState(RTC::MAPPER_STATE& state);
+   RTC::RETURN_VALUE requestCurrentBuiltMap(RTC::OGMap_out map);
 
 };
 
@@ -72,7 +80,7 @@ class OGMapServerSVC_impl
    virtual ~OGMapServerSVC_impl();
 
    // attributes and operations
-  RTC::RETURN_VALUE requestCurrentBuiltMap(RTC::OGMap_out map);
+   RTC::RETURN_VALUE requestCurrentBuiltMap(RTC::OGMap_out map);
 
 };
 

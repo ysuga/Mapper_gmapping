@@ -165,90 +165,269 @@ Lang Type:
 		Range:           
 		Constraint:      
 
-		Name:             start_map_update_in_activated
-		Description:     
-		Type:            string
-		DefaultValue:     false
+		Name:            sigma sigma
+		Description:     The sigma used by the greedy endpoint
+		                 matching
+		Type:            float
+		DefaultValue:    0.05 0.05
 		Unit:            
 		Range:           
 		Constraint:      
 
-		Name:             x_min
-		Description:     
-		Type:            double
-		DefaultValue:     -10.0
+		Name:            kernelSize kernelSize
+		Description:     The kernel in which to look for a
+		                 correspondence
+		Type:            int
+		DefaultValue:    1 1
 		Unit:            
 		Range:           
 		Constraint:      
 
-		Name:             x_max
-		Description:     
-		Type:            double
-		DefaultValue:     10.0
+		Name:            lstep lstep
+		Description:     The optimization step in translation
+		Type:            float
+		DefaultValue:    0.05 0.05
 		Unit:            
 		Range:           
 		Constraint:      
 
-		Name:             y_min
-		Description:     
-		Type:            double
-		DefaultValue:     -10.0
+		Name:            astep astep
+		Description:     The optimization step in rotation
+		Type:            float
+		DefaultValue:    0.05 0.05
 		Unit:            
 		Range:           
 		Constraint:      
 
-		Name:             y_max
-		Description:     
-		Type:            double
-		DefaultValue:     10.0
+		Name:            iterations iterations
+		Description:     The number of iterations of the scanmatcher
+		Type:            int
+		DefaultValue:    1 5
 		Unit:            
 		Range:           
 		Constraint:      
 
-		Name:             resolution
-		Description:     
-		Type:            double
-		DefaultValue:     0.05
+		Name:            lsigma lsigma
+		Description:     The sigma of a beam used for likelihood
+		                 computation
+		Type:            float
+		DefaultValue:    0.075 0.075
 		Unit:            
 		Range:           
 		Constraint:      
 
-		Name:             init_pose_x
-		Description:     
-		Type:            double
-		DefaultValue:     0.0
+		Name:            ogain ogain
+		Description:     Gain to be used while evaluating the
+		                 likelihood, for smoothing the resampling
+		                 effects
+		Type:            float
+		DefaultValue:    3.0 3.0
 		Unit:            
 		Range:           
 		Constraint:      
 
-		Name:             init_pose_y
-		Description:     
-		Type:            double
-		DefaultValue:     0.0
+		Name:            lskip lskip
+		Description:     Number of beams to skip in each scan.
+		Type:            int
+		DefaultValue:    0 0
 		Unit:            
 		Range:           
 		Constraint:      
 
-		Name:             init_pose_th
-		Description:     
-		Type:            double
-		DefaultValue:     0.0
+		Name:            minimumScore minimumScore
+		Description:     Minimum score for considering the outcome of
+		                 the scan matching good. Can avoid jumping
+		                 pose estimates in large open spaces when
+		                 using laser scanners with limited range
+		                 (e.g. 5m). Scores go up to 600+, try 50 for
+		                 example when experiencing jumping estimate
+		                 issues.
+		Type:            float
+		DefaultValue:    0.0 0.0
 		Unit:            
 		Range:           
 		Constraint:      
 
-		Name:             log_dir
-		Description:     
-		Type:            string
-		DefaultValue:     log_out
+		Name:            srr srr
+		Description:     Odometry error in translation as a function
+		                 of translation (rho/rho)
+		Type:            float
+		DefaultValue:    0.1 0.1
 		Unit:            
 		Range:           
 		Constraint:      
 
-		Name:             log_enable
-		Description:     
-		Type:            string
-		DefaultValue:     log_enable
+		Name:            srt srt
+		Description:     Odometry error in translation as a function
+		                 of rotation (rho/theta)
+		Type:            float
+		DefaultValue:    0.2 0.2
+		Unit:            
+		Range:           
+		Constraint:      
+
+		Name:            str str
+		Description:     Odometry error in rotation as a function of
+		                 translation (theta/rho)
+		Type:            float
+		DefaultValue:    0.1 0.1
+		Unit:            
+		Range:           
+		Constraint:      
+
+		Name:            stt stt
+		Description:     Odometry error in rotation as a function of
+		                 rotation (theta/theta)
+		Type:            float
+		DefaultValue:    0.05 0.05
+		Unit:            
+		Range:           
+		Constraint:      
+
+		Name:            linearUpdate linearUpdate
+		Description:     Process a scan each time the robot
+		                 translates this far
+		Type:            float
+		DefaultValue:    1.0 1.0
+		Unit:            
+		Range:           
+		Constraint:      
+
+		Name:            angularUpdate angularUpdate
+		Description:     Process a scan each time the robot rotates
+		                 this far
+		Type:            float
+		DefaultValue:    0.5 0.5
+		Unit:            
+		Range:           
+		Constraint:      
+
+		Name:            temporalUpdate temporalUpdate
+		Description:     Process a scan if the last scan proccessed
+		                 is older than the update time in seconds. A
+		                 value less than zero will turn time based
+		                 updates off.
+		Type:            float
+		DefaultValue:    -1.0 -1.0
+		Unit:            
+		Range:           
+		Constraint:      
+
+		Name:            resampleThreshold resampleThreshold
+		Description:     The Neff based resampling threshold
+		Type:            float
+		DefaultValue:    0.5 0.5
+		Unit:            
+		Range:           
+		Constraint:      
+
+		Name:            particles particles
+		Description:     Number of particles in the filter
+		Type:            int
+		DefaultValue:    30 30
+		Unit:            
+		Range:           
+		Constraint:      
+
+		Name:            xmin xmin
+		Description:     Initial map size
+		Type:            float
+		DefaultValue:    -100 -100
+		Unit:            
+		Range:           
+		Constraint:      
+
+		Name:            ymin ymin
+		Description:     Initial map size
+		Type:            float
+		DefaultValue:    -100 -100
+		Unit:            
+		Range:           
+		Constraint:      
+
+		Name:            xmax xmax
+		Description:     Initial map size
+		Type:            float
+		DefaultValue:    100 100
+		Unit:            
+		Range:           
+		Constraint:      
+
+		Name:            ymax ymax
+		Description:     Initial map size
+		Type:            float
+		DefaultValue:    100 100
+		Unit:            
+		Range:           
+		Constraint:      
+
+		Name:            delta delta
+		Description:     Processing parameters (resolution of the
+		                 map)
+		Type:            float
+		DefaultValue:    0.05 0.05
+		Unit:            
+		Range:           
+		Constraint:      
+
+		Name:            llsamplerange llsamplerange
+		Description:     Translational sampling range for the
+		                 likelihood
+		Type:            float
+		DefaultValue:    0.01 0.01
+		Unit:            
+		Range:           
+		Constraint:      
+
+		Name:            llsamplestep llsamplestep
+		Description:     Translational sampling step for the
+		                 likelihood
+		Type:            float
+		DefaultValue:    0.01 0.01
+		Unit:            
+		Range:           
+		Constraint:      
+
+		Name:            lasamplerange lasamplerange
+		Description:     Angular sampling range for the likelihood
+		Type:            float
+		DefaultValue:    0.005 0.005
+		Unit:            
+		Range:           
+		Constraint:      
+
+		Name:            lasamplestep lasamplestep
+		Description:     Angular sampling step for the likelihood
+		Type:            float
+		DefaultValue:    0.005 0.005
+		Unit:            
+		Range:           
+		Constraint:      
+
+		Name:            transform_publish_period transform_publish_period
+		Description:     How long (in seconds) between transform
+		                 publications.
+		Type:            float
+		DefaultValue:    0.05 0.05
+		Unit:            
+		Range:           
+		Constraint:      
+
+		Name:            occ_thresh occ_thresh
+		Description:     Threshold on gmapping's occupancy values.
+		                 Cells with greater occupancy are considered
+		                 occupied (i.e., set to 100 in the resulting
+		                 sensor_msgs/LaserScan).
+		Type:            float
+		DefaultValue:    0.25 0.25
+		Unit:            
+		Range:           
+		Constraint:      
+
+		Name:            throttle_scans throttle_scans
+		Description:     throttle_scans
+		Type:            int
+		DefaultValue:    1 1
 		Unit:            
 		Range:           
 		Constraint:      

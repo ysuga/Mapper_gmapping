@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <rtc:RtcProfile rtc:version="0.2" rtc:id="RTC:ssr:Navigation:Mapper_gmapping:1.0.0" xmlns:rtcExt="http://www.openrtp.org/namespaces/rtc_ext" xmlns:rtcDoc="http://www.openrtp.org/namespaces/rtc_doc" xmlns:rtc="http://www.openrtp.org/namespaces/rtc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <rtc:BasicInfo xsi:type="rtcExt:basic_info_ext" rtcExt:saveProject="Mapper_gmapping" rtc:updateDate="2014-08-03T01:28:08+09:00" rtc:creationDate="2014-07-24T17:37:07+09:00" rtc:version="1.0.0" rtc:vendor="ssr" rtc:maxInstances="1" rtc:executionType="PeriodicExecutionContext" rtc:executionRate="1000.0" rtc:description="Mapper RTC using gmapping" rtc:category="Navigation" rtc:componentKind="DataFlowComponent" rtc:activityType="EVENTDRIVEN" rtc:componentType="STATIC" rtc:name="Mapper_gmapping">
+    <rtc:BasicInfo xsi:type="rtcExt:basic_info_ext" rtcExt:saveProject="Mapper_gmapping" rtc:updateDate="2014-08-17T17:05:11.437+09:00" rtc:creationDate="2014-07-24T17:37:07+09:00" rtc:version="1.0.0" rtc:vendor="ssr" rtc:maxInstances="1" rtc:executionType="PeriodicExecutionContext" rtc:executionRate="1000.0" rtc:description="Mapper RTC using gmapping" rtc:category="Navigation" rtc:componentKind="DataFlowComponent" rtc:activityType="EVENTDRIVEN" rtc:componentType="STATIC" rtc:name="Mapper_gmapping">
         <rtcExt:VersionUpLogs></rtcExt:VersionUpLogs>
         <rtcExt:VersionUpLogs></rtcExt:VersionUpLogs>
     </rtc:BasicInfo>
@@ -24,74 +24,129 @@
         <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="debug" rtc:unit="" rtc:defaultValue="0" rtc:type="int" rtc:name="debug">
             <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
         </rtc:Configuration>
-        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="start_map_update_in_activated" rtc:unit="" rtc:defaultValue="false" rtc:type="string" rtc:name="start_map_update_in_activated">
-            <rtc:Constraint>
-                <rtc:ConstraintListType>
-                    <rtc:Constraint>
-                        <rtc:ConstraintUnitType>
-                            <rtc:propertyIsEqualTo rtc:matchCase="false">
-                                <rtc:Literal>true</rtc:Literal>
-                            </rtc:propertyIsEqualTo>
-                        </rtc:ConstraintUnitType>
-                    </rtc:Constraint>
-                    <rtc:Constraint>
-                        <rtc:ConstraintUnitType>
-                            <rtc:propertyIsEqualTo rtc:matchCase="false">
-                                <rtc:Literal>false</rtc:Literal>
-                            </rtc:propertyIsEqualTo>
-                        </rtc:ConstraintUnitType>
-                    </rtc:Constraint>
-                </rtc:ConstraintListType>
-            </rtc:Constraint>
-            <rtcExt:Properties rtcExt:value="spin." rtcExt:name="__widget__"/>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="sigma" rtc:unit="" rtc:defaultValue="0.05" rtc:type="float" rtc:name="sigma">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="The sigma used by the greedy endpoint matching" rtcDoc:defaultValue="0.05" rtcDoc:dataname="sigma"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
         </rtc:Configuration>
-        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="x_min" rtc:unit="meter" rtc:defaultValue="-10.0" rtc:type="double" rtc:name="x_min">
-            <rtcExt:Properties rtcExt:value="spin." rtcExt:name="__widget__"/>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="kernelSize" rtc:unit="" rtc:defaultValue="1" rtc:type="int" rtc:name="kernelSize">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="The kernel in which to look for a correspondence" rtcDoc:defaultValue="1" rtcDoc:dataname="kernelSize"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
         </rtc:Configuration>
-        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="x_max" rtc:unit="meter" rtc:defaultValue="10.0" rtc:type="double" rtc:name="x_max">
-            <rtcExt:Properties rtcExt:value="spin." rtcExt:name="__widget__"/>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="lstep" rtc:unit="" rtc:defaultValue="0.05" rtc:type="float" rtc:name="lstep">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="The optimization step in translation" rtcDoc:defaultValue="0.05" rtcDoc:dataname="lstep"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
         </rtc:Configuration>
-        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="y_min" rtc:unit="meter" rtc:defaultValue="-10.0" rtc:type="double" rtc:name="y_min">
-            <rtcExt:Properties rtcExt:value="spin." rtcExt:name="__widget__"/>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="astep" rtc:unit="" rtc:defaultValue="0.05" rtc:type="float" rtc:name="astep">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="The optimization step in rotation" rtcDoc:defaultValue="0.05" rtcDoc:dataname="astep"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
         </rtc:Configuration>
-        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="y_max" rtc:unit="meter" rtc:defaultValue="10.0" rtc:type="double" rtc:name="y_max">
-            <rtcExt:Properties rtcExt:value="spin." rtcExt:name="__widget__"/>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="iterations" rtc:unit="" rtc:defaultValue="5" rtc:type="int" rtc:name="iterations">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description=" The number of iterations of the scanmatcher" rtcDoc:defaultValue="1" rtcDoc:dataname="iterations"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
         </rtc:Configuration>
-        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="resolution" rtc:unit="meter" rtc:defaultValue="0.05" rtc:type="double" rtc:name="resolution">
-            <rtcExt:Properties rtcExt:value="spin." rtcExt:name="__widget__"/>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="lsigma" rtc:unit="" rtc:defaultValue="0.075" rtc:type="float" rtc:name="lsigma">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="The sigma of a beam used for likelihood computation" rtcDoc:defaultValue="0.075" rtcDoc:dataname="lsigma"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
         </rtc:Configuration>
-        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="init_pose_x" rtc:unit="meter" rtc:defaultValue="0.0" rtc:type="double" rtc:name="init_pose_x">
-            <rtcExt:Properties rtcExt:value="spin." rtcExt:name="__widget__"/>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="ogain" rtc:unit="" rtc:defaultValue="3.0" rtc:type="float" rtc:name="ogain">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="Gain to be used while evaluating the likelihood, for smoothing the resampling effects" rtcDoc:defaultValue="3.0" rtcDoc:dataname="ogain"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
         </rtc:Configuration>
-        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="init_pose_y" rtc:unit="meter" rtc:defaultValue="0.0" rtc:type="double" rtc:name="init_pose_y">
-            <rtcExt:Properties rtcExt:value="spin." rtcExt:name="__widget__"/>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="lskip" rtc:unit="" rtc:defaultValue="0" rtc:type="int" rtc:name="lskip">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description=" Number of beams to skip in each scan." rtcDoc:defaultValue="0" rtcDoc:dataname="lskip"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
         </rtc:Configuration>
-        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="init_pose_th" rtc:unit="meter" rtc:defaultValue="0.0" rtc:type="double" rtc:name="init_pose_th">
-            <rtcExt:Properties rtcExt:value="spin." rtcExt:name="__widget__"/>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="minimumScore" rtc:unit="" rtc:defaultValue="0.0" rtc:type="float" rtc:name="minimumScore">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="Minimum score for considering the outcome of the scan matching good. Can avoid jumping pose estimates in large open spaces when using laser scanners with limited range (e.g. 5m). Scores go up to 600+, try 50 for example when experiencing jumping estimate issues." rtcDoc:defaultValue="0.0" rtcDoc:dataname="minimumScore"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
         </rtc:Configuration>
-        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="log_dir" rtc:unit="" rtc:defaultValue="log_out" rtc:type="string" rtc:name="log_dir">
-            <rtcExt:Properties rtcExt:value="spin." rtcExt:name="__widget__"/>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="srr" rtc:unit="" rtc:defaultValue="0.1" rtc:type="float" rtc:name="srr">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="Odometry error in translation as a function of translation (rho/rho)" rtcDoc:defaultValue="0.1" rtcDoc:dataname="srr"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
         </rtc:Configuration>
-        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="log_enable" rtc:unit="" rtc:defaultValue="log_enable" rtc:type="string" rtc:name="log_enable">
-            <rtc:Constraint>
-                <rtc:ConstraintListType>
-                    <rtc:Constraint>
-                        <rtc:ConstraintUnitType>
-                            <rtc:propertyIsEqualTo rtc:matchCase="false">
-                                <rtc:Literal>true</rtc:Literal>
-                            </rtc:propertyIsEqualTo>
-                        </rtc:ConstraintUnitType>
-                    </rtc:Constraint>
-                    <rtc:Constraint>
-                        <rtc:ConstraintUnitType>
-                            <rtc:propertyIsEqualTo rtc:matchCase="false">
-                                <rtc:Literal>false</rtc:Literal>
-                            </rtc:propertyIsEqualTo>
-                        </rtc:ConstraintUnitType>
-                    </rtc:Constraint>
-                </rtc:ConstraintListType>
-            </rtc:Constraint>
-            <rtcExt:Properties rtcExt:value="spin." rtcExt:name="__widget__"/>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="srt" rtc:unit="" rtc:defaultValue="0.2" rtc:type="float" rtc:name="srt">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="Odometry error in translation as a function of rotation (rho/theta)" rtcDoc:defaultValue="0.2" rtcDoc:dataname="srt"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
+        </rtc:Configuration>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="str" rtc:unit="" rtc:defaultValue="0.1" rtc:type="float" rtc:name="str">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="Odometry error in rotation as a function of translation (theta/rho)" rtcDoc:defaultValue="0.1" rtcDoc:dataname="str"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
+        </rtc:Configuration>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="stt" rtc:unit="" rtc:defaultValue="0.05" rtc:type="float" rtc:name="stt">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="Odometry error in rotation as a function of rotation (theta/theta)" rtcDoc:defaultValue="0.05" rtcDoc:dataname="stt"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
+        </rtc:Configuration>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="linearUpdate" rtc:unit="" rtc:defaultValue="1.0" rtc:type="float" rtc:name="linearUpdate">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="Process a scan each time the robot translates this far" rtcDoc:defaultValue="1.0" rtcDoc:dataname="linearUpdate"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
+        </rtc:Configuration>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="angularUpdate" rtc:unit="" rtc:defaultValue="0.5" rtc:type="float" rtc:name="angularUpdate">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="Process a scan each time the robot rotates this far" rtcDoc:defaultValue="0.5" rtcDoc:dataname="angularUpdate"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
+        </rtc:Configuration>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="temporalUpdate" rtc:unit="" rtc:defaultValue="-1.0" rtc:type="float" rtc:name="temporalUpdate">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="Process a scan if the last scan proccessed is older than the update time in seconds. A value less than zero will turn time based updates off." rtcDoc:defaultValue="-1.0" rtcDoc:dataname="temporalUpdate"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
+        </rtc:Configuration>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="resampleThreshold" rtc:unit="" rtc:defaultValue="0.5" rtc:type="float" rtc:name="resampleThreshold">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="The Neff based resampling threshold" rtcDoc:defaultValue="0.5" rtcDoc:dataname="resampleThreshold"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
+        </rtc:Configuration>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="particles" rtc:unit="" rtc:defaultValue="30" rtc:type="int" rtc:name="particles">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="Number of particles in the filter" rtcDoc:defaultValue="30" rtcDoc:dataname="particles"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
+        </rtc:Configuration>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="xmin" rtc:unit="" rtc:defaultValue="-100" rtc:type="float" rtc:name="xmin">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="Initial map size" rtcDoc:defaultValue="-100" rtcDoc:dataname="xmin"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
+        </rtc:Configuration>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="ymin" rtc:unit="" rtc:defaultValue="-100" rtc:type="float" rtc:name="ymin">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="Initial map size" rtcDoc:defaultValue="-100" rtcDoc:dataname="ymin"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
+        </rtc:Configuration>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="xmax" rtc:unit="" rtc:defaultValue="100" rtc:type="float" rtc:name="xmax">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="Initial map size" rtcDoc:defaultValue="100" rtcDoc:dataname="xmax"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
+        </rtc:Configuration>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="ymax" rtc:unit="" rtc:defaultValue="100" rtc:type="float" rtc:name="ymax">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="Initial map size" rtcDoc:defaultValue="100" rtcDoc:dataname="ymax"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
+        </rtc:Configuration>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="delta" rtc:unit="" rtc:defaultValue="0.05" rtc:type="float" rtc:name="delta">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="Processing parameters (resolution of the map)" rtcDoc:defaultValue="0.05" rtcDoc:dataname="delta"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
+        </rtc:Configuration>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="llsamplerange" rtc:unit="" rtc:defaultValue="0.01" rtc:type="float" rtc:name="llsamplerange">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="Translational sampling range for the likelihood" rtcDoc:defaultValue="0.01" rtcDoc:dataname="llsamplerange"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
+        </rtc:Configuration>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="llsamplestep" rtc:unit="" rtc:defaultValue="0.01" rtc:type="float" rtc:name="llsamplestep">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="Translational sampling step for the likelihood" rtcDoc:defaultValue="0.01" rtcDoc:dataname="llsamplestep"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
+        </rtc:Configuration>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="lasamplerange" rtc:unit="" rtc:defaultValue="0.005" rtc:type="float" rtc:name="lasamplerange">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="Angular sampling range for the likelihood" rtcDoc:defaultValue="0.005" rtcDoc:dataname="lasamplerange"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
+        </rtc:Configuration>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="lasamplestep" rtc:unit="" rtc:defaultValue="0.005" rtc:type="float" rtc:name="lasamplestep">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="Angular sampling step for the likelihood" rtcDoc:defaultValue="0.005" rtcDoc:dataname="lasamplestep"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
+        </rtc:Configuration>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="transform_publish_period" rtc:unit="" rtc:defaultValue="0.05" rtc:type="float" rtc:name="transform_publish_period">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="How long (in seconds) between transform publications." rtcDoc:defaultValue="0.05" rtcDoc:dataname="transform_publish_period"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
+        </rtc:Configuration>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="occ_thresh" rtc:unit="" rtc:defaultValue="0.25" rtc:type="float" rtc:name="occ_thresh">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="Threshold on gmapping's occupancy values. Cells with greater occupancy are considered occupied (i.e., set to 100 in the resulting sensor_msgs/LaserScan)." rtcDoc:defaultValue="0.25" rtcDoc:dataname="occ_thresh"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
+        </rtc:Configuration>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="throttle_scans" rtc:unit="" rtc:defaultValue="1" rtc:type="int" rtc:name="throttle_scans">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="throttle_scans" rtcDoc:defaultValue="1" rtcDoc:dataname="throttle_scans"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
+        </rtc:Configuration>
+        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtcExt:variableName="map_update_interval" rtc:unit="" rtc:defaultValue="5.0" rtc:type="float" rtc:name="map_update_interval">
+            <rtcDoc:Doc rtcDoc:constraint="" rtcDoc:range="" rtcDoc:unit="" rtcDoc:description="How long (in seconds) between updates to the map. Lowering this number updates the occupancy grid more often, at the expense of greater computational load." rtcDoc:defaultValue="5.0" rtcDoc:dataname="map_update_interval"/>
+            <rtcExt:Properties rtcExt:value="text" rtcExt:name="__widget__"/>
         </rtc:Configuration>
     </rtc:ConfigurationSet>
     <rtc:DataPorts xsi:type="rtcExt:dataport_ext" rtcExt:position="LEFT" rtcExt:variableName="range" rtc:unit="" rtc:subscriptionType="" rtc:dataflowType="" rtc:interfaceType="" rtc:idlFile="" rtc:type="RTC::RangeData" rtc:name="range" rtc:portType="DataInPort"/>

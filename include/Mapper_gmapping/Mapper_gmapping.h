@@ -32,6 +32,18 @@
 
 // </rtc-template>
 
+#ifdef max
+#undef max
+#endif
+
+#ifdef min
+#undef min
+#endif
+	 
+#include "gmapping/gridfastslam/gridslamprocessor.h"
+#include "gmapping/sensor/sensor_base/sensor.h"
+
+
 using namespace RTC;
 
 /*!
@@ -233,71 +245,206 @@ class Mapper_gmapping
    */
   int m_debug;
   /*!
-   * 
-   * - Name:  start_map_update_in_activated
-   * - DefaultValue: false
-   */
-  std::string m_start_map_update_in_activated;
-  /*!
-   * 
-   * - Name:  x_min
-   * - DefaultValue: -10.0
-   */
-  double m_x_min;
-  /*!
-   * 
-   * - Name:  x_max
-   * - DefaultValue: 10.0
-   */
-  double m_x_max;
-  /*!
-   * 
-   * - Name:  y_min
-   * - DefaultValue: -10.0
-   */
-  double m_y_min;
-  /*!
-   * 
-   * - Name:  y_max
-   * - DefaultValue: 10.0
-   */
-  double m_y_max;
-  /*!
-   * 
-   * - Name:  resolution
+   * The sigma used by the greedy endpoint matching
+   * - Name: sigma sigma
    * - DefaultValue: 0.05
    */
-  double m_resolution;
+  float m_sigma;
   /*!
-   * 
-   * - Name:  init_pose_x
+   * The kernel in which to look for a correspondence
+   * - Name: kernelSize kernelSize
+   * - DefaultValue: 1
+   */
+  int m_kernelSize;
+  /*!
+   * The optimization step in translation
+   * - Name: lstep lstep
+   * - DefaultValue: 0.05
+   */
+  float m_lstep;
+  /*!
+   * The optimization step in rotation
+   * - Name: astep astep
+   * - DefaultValue: 0.05
+   */
+  float m_astep;
+  /*!
+   * The number of iterations of the scanmatcher
+   * - Name: iterations iterations
+   * - DefaultValue: 5
+   */
+  int m_iterations;
+  /*!
+   * The sigma of a beam used for likelihood computation
+   * - Name: lsigma lsigma
+   * - DefaultValue: 0.075
+   */
+  float m_lsigma;
+  /*!
+   * Gain to be used while evaluating the likelihood, for
+   * smoothing the resampling effects
+   * - Name: ogain ogain
+   * - DefaultValue: 3.0
+   */
+  float m_ogain;
+  /*!
+   * Number of beams to skip in each scan.
+   * - Name: lskip lskip
+   * - DefaultValue: 0
+   */
+  int m_lskip;
+  /*!
+   * Minimum score for considering the outcome of the scan
+   * matching good. Can avoid jumping pose estimates in large
+   * open spaces when using laser scanners with limited range
+   * (e.g. 5m). Scores go up to 600+, try 50 for example when
+   * experiencing jumping estimate issues.
+   * - Name: minimumScore minimumScore
    * - DefaultValue: 0.0
    */
-  double m_init_pose_x;
+  float m_minimumScore;
   /*!
-   * 
-   * - Name:  init_pose_y
-   * - DefaultValue: 0.0
+   * Odometry error in translation as a function of translation
+   * (rho/rho)
+   * - Name: srr srr
+   * - DefaultValue: 0.1
    */
-  double m_init_pose_y;
+  float m_srr;
   /*!
-   * 
-   * - Name:  init_pose_th
-   * - DefaultValue: 0.0
+   * Odometry error in translation as a function of rotation
+   * (rho/theta)
+   * - Name: srt srt
+   * - DefaultValue: 0.2
    */
-  double m_init_pose_th;
+  float m_srt;
   /*!
-   * 
-   * - Name:  log_dir
-   * - DefaultValue: log_out
+   * Odometry error in rotation as a function of translation
+   * (theta/rho)
+   * - Name: str str
+   * - DefaultValue: 0.1
    */
-  std::string m_log_dir;
+  float m_str;
   /*!
-   * 
-   * - Name:  log_enable
-   * - DefaultValue: log_enable
+   * Odometry error in rotation as a function of rotation
+   * (theta/theta)
+   * - Name: stt stt
+   * - DefaultValue: 0.05
    */
-  std::string m_log_enable;
+  float m_stt;
+  /*!
+   * Process a scan each time the robot translates this far
+   * - Name: linearUpdate linearUpdate
+   * - DefaultValue: 1.0
+   */
+  float m_linearUpdate;
+  /*!
+   * Process a scan each time the robot rotates this far
+   * - Name: angularUpdate angularUpdate
+   * - DefaultValue: 0.5
+   */
+  float m_angularUpdate;
+  /*!
+   * Process a scan if the last scan proccessed is older than the
+   * update time in seconds. A value less than zero will turn
+   * time based updates off.
+   * - Name: temporalUpdate temporalUpdate
+   * - DefaultValue: -1.0
+   */
+  float m_temporalUpdate;
+  /*!
+   * The Neff based resampling threshold
+   * - Name: resampleThreshold resampleThreshold
+   * - DefaultValue: 0.5
+   */
+  float m_resampleThreshold;
+  /*!
+   * Number of particles in the filter
+   * - Name: particles particles
+   * - DefaultValue: 30
+   */
+  int m_particles;
+  /*!
+   * Initial map size
+   * - Name: xmin xmin
+   * - DefaultValue: -100
+   */
+  float m_xmin;
+  /*!
+   * Initial map size
+   * - Name: ymin ymin
+   * - DefaultValue: -100
+   */
+  float m_ymin;
+  /*!
+   * Initial map size
+   * - Name: xmax xmax
+   * - DefaultValue: 100
+   */
+  float m_xmax;
+  /*!
+   * Initial map size
+   * - Name: ymax ymax
+   * - DefaultValue: 100
+   */
+  float m_ymax;
+  /*!
+   * Processing parameters (resolution of the map)
+   * - Name: delta delta
+   * - DefaultValue: 0.05
+   */
+  float m_delta;
+  /*!
+   * Translational sampling range for the likelihood
+   * - Name: llsamplerange llsamplerange
+   * - DefaultValue: 0.01
+   */
+  float m_llsamplerange;
+  /*!
+   * Translational sampling step for the likelihood
+   * - Name: llsamplestep llsamplestep
+   * - DefaultValue: 0.01
+   */
+  float m_llsamplestep;
+  /*!
+   * Angular sampling range for the likelihood
+   * - Name: lasamplerange lasamplerange
+   * - DefaultValue: 0.005
+   */
+  float m_lasamplerange;
+  /*!
+   * Angular sampling step for the likelihood
+   * - Name: lasamplestep lasamplestep
+   * - DefaultValue: 0.005
+   */
+  float m_lasamplestep;
+  /*!
+   * How long (in seconds) between transform publications.
+   * - Name: transform_publish_period transform_publish_period
+   * - DefaultValue: 0.05
+   */
+  float m_transform_publish_period;
+  /*!
+   * Threshold on gmapping's occupancy values. Cells with greater
+   * occupancy are considered occupied (i.e., set to 100 in the
+   * resulting sensor_msgs/LaserScan).
+   * - Name: occ_thresh occ_thresh
+   * - DefaultValue: 0.25
+   */
+  float m_occ_thresh;
+  /*!
+   * Process 1 out of every this many scans (set it to a higher number to skip more scans)
+   * - Name: throttle_scans throttle_scans
+   * - DefaultValue: 1
+   */
+  int m_throttle_scans;
+  /*!
+   * How long (in seconds) between updates to the map. Lowering this number updates the occupancy grid more often, at the expense of greater computational load.
+   * map_update_interval
+   * - Name: map_update_interval
+   * - DefaultValue: 5.0
+   */
+  float m_map_update_interval;
+
 
   // </rtc-template>
 
@@ -354,6 +501,27 @@ class Mapper_gmapping
   
   // </rtc-template>
 
+	 GMapping::GridSlamProcessor* m_pGridSlamProcessor;
+	 GMapping::RangeSensor *m_pRangeSensor;
+	 GMapping::OdometrySensor *m_pOdometrySensor;
+
+	 bool m_isScanReceived;
+	 bool m_isOdomReceived;
+	 bool m_isInit;
+
+	 bool m_isMapStarted;
+
+	 double m_lastScanTime;
+
+ private:
+	bool initMap(void);
+	bool updateMap(void);
+
+ public:
+	RTC::OGMap m_map;
+
+	void startMap(bool flag) {m_isMapStarted = flag;}
+	 
 };
 
 

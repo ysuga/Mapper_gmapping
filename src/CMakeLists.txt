@@ -33,6 +33,9 @@ add_definitions(${OMNIORB_CFLAGS})
 
 MAP_ADD_STR(comp_hdrs "../" comp_headers)
 
+include_directories(${PROJECT_SOURCE_DIR}/openslam_gmapping/include)
+set(GMAPPING_LIBS gmapping_gridfastslam)
+
 link_directories(${OPENRTM_LIBRARY_DIRS})
 link_directories(${OMNIORB_LIBRARY_DIRS})
 
@@ -41,11 +44,11 @@ add_library(${PROJECT_NAME} ${LIB_TYPE} ${comp_srcs}
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
 set_source_files_properties(${ALL_IDL_SRCS} PROPERTIES GENERATED 1)
 add_dependencies(${PROJECT_NAME} ALL_IDL_TGT)
-target_link_libraries(${PROJECT_NAME} ${OPENRTM_LIBRARIES} gmapping_gridfastslam)
+target_link_libraries(${PROJECT_NAME} ${OPENRTM_LIBRARIES} ${GMAPPING_LIBS})
 
 add_executable(${PROJECT_NAME}Comp ${standalone_srcs}
   ${comp_srcs} ${comp_headers} ${ALL_IDL_SRCS})
-target_link_libraries(${PROJECT_NAME}Comp ${OPENRTM_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}Comp ${OPENRTM_LIBRARIES} ${GMAPPING_LIBS})
 
 install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}Comp
     EXPORT ${PROJECT_NAME}
