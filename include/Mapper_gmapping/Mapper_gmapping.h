@@ -514,8 +514,10 @@ class Mapper_gmapping
 	 double m_lastScanTime;
 
  private:
+	 public:
 	bool initMap(void);
 	bool updateMap(void);
+	bool updateOGMap(RTC::OGMap &map);
 
  public:
 	RTC::OGMap m_map;

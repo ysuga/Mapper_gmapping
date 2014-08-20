@@ -44,10 +44,10 @@ static const char* mapper_gmapping_spec[] =
     "conf.default.temporalUpdate", "-1.0",
     "conf.default.resampleThreshold", "0.5",
     "conf.default.particles", "30",
-    "conf.default.xmin", "-100",
-    "conf.default.ymin", "-100",
-    "conf.default.xmax", "100",
-    "conf.default.ymax", "100",
+    "conf.default.xmin", "-10",
+    "conf.default.ymin", "-10",
+    "conf.default.xmax", "10",
+    "conf.default.ymax", "10",
     "conf.default.delta", "0.05",
     "conf.default.llsamplerange", "0.01",
     "conf.default.llsamplestep", "0.01",
@@ -170,10 +170,10 @@ RTC::ReturnCode_t Mapper_gmapping::onInitialize()
   bindParameter("temporalUpdate", m_temporalUpdate, "-1.0");
   bindParameter("resampleThreshold", m_resampleThreshold, "0.5");
   bindParameter("particles", m_particles, "30");
-  bindParameter("xmin", m_xmin, "-100");
-  bindParameter("ymin", m_ymin, "-100");
-  bindParameter("xmax", m_xmax, "100");
-  bindParameter("ymax", m_ymax, "100");
+  bindParameter("xmin", m_xmin, "-10");
+  bindParameter("ymin", m_ymin, "-10");
+  bindParameter("xmax", m_xmax, "10");
+  bindParameter("ymax", m_ymax, "10");
   bindParameter("delta", m_delta, "0.05");
   bindParameter("llsamplerange", m_llsamplerange, "0.01");
   bindParameter("llsamplestep", m_llsamplestep, "0.01");
@@ -230,7 +230,7 @@ RTC::ReturnCode_t Mapper_gmapping::onDeactivated(RTC::UniqueId ec_id)
 
 bool Mapper_gmapping::initMap(void) {
 	
-	m_pRangeSensor = new GMapping::RangeSensor("LIDAR0", m_range.ranges.length(), m_range.config.angularRes, 
+	m_pRangeSensor = new GMapping::RangeSensor("FLASER", m_range.ranges.length(), m_range.config.angularRes, 
 	GMapping::OrientedPoint(m_range.geometry.geometry.pose.position.x, 
 							m_range.geometry.geometry.pose.position.y, 
 							m_range.geometry.geometry.pose.position.z),
@@ -261,6 +261,11 @@ bool Mapper_gmapping::initMap(void) {
 
 	m_map.config.width = (long)((m_xmax - m_xmin) / m_delta);
 	m_map.config.height = (long)((m_ymax - m_ymin) / m_delta);
+	m_map.config.height = (long)((m_ymax - m_ymin) / m_delta);
+	m_map.map.column = m_map.config.width - (long)(m_xmax/m_delta);
+	m_map.map.row = m_map.config.height - (long)(m_ymax/m_delta);
+	m_map.map.width = m_map.config.width;
+	m_map.map.height = m_map.config.height;
 	m_map.config.xScale = m_map.config.yScale = m_delta;
 	m_map.config.origin.position.x = m_map.config.origin.position.y = m_map.config.origin.heading = 0;
 	m_map.map.cells.length(m_map.config.width * m_map.config.height);
@@ -269,6 +274,10 @@ bool Mapper_gmapping::initMap(void) {
 }
 
 bool Mapper_gmapping::updateMap(void) {
+	return updateOGMap(m_map);
+}
+
+bool Mapper_gmapping::updateOGMap(RTC::OGMap& map) {
   GMapping::ScanMatcher matcher;
   double* laser_angles = new double[m_range.ranges.length()];
   double theta = m_range.config.minAngle;
@@ -315,6 +324,8 @@ bool Mapper_gmapping::updateMap(void) {
     m_map.config.height = smap.getMapSizeY();
     m_map.config.origin.position.x = m_xmin;
     m_map.config.origin.position.y = m_ymin;
+	m_map.map.width = m_map.config.width;
+	m_map.map.height = m_map.config.height;
 	m_map.map.cells.length(m_map.config.width * m_map.config.height);
   }
 
@@ -323,9 +334,9 @@ bool Mapper_gmapping::updateMap(void) {
       GMapping::IntPoint p(x, y);
       double occ = smap.cell(p);
       if(occ < 0) {
-		  m_map.map.cells[y * m_map.config.width + x] = -1;
+		  m_map.map.cells[y * m_map.config.width + x] = 127;
 	  } else if(occ > m_occ_thresh) {
-		  m_map.map.cells[y * m_map.config.width + x] = 100;
+		  m_map.map.cells[y * m_map.config.width + x] = 255;
       } else {
           m_map.map.cells[y * m_map.config.width + x] = 0;
 	  }
@@ -339,6 +350,8 @@ RTC::ReturnCode_t Mapper_gmapping::onExecute(RTC::UniqueId ec_id)
 {
 	if(m_rangeIn.isNew()) {
 		m_rangeIn.read();
+		m_range.config.maxRange = 20.0;
+		m_range.config.minRange = 0.2;
 		double scanTime = m_range.tm.sec + ((double)m_range.tm.nsec)/1000000000;
 		if(m_isInit && m_isMapStarted) {
 			double* ranges_double = new double[m_range.ranges.length()];

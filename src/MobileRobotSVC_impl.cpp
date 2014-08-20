@@ -68,7 +68,27 @@ RTC::RETURN_VALUE OGMapperSVC_impl::getState(RTC::MAPPER_STATE& state)
 RTC::RETURN_VALUE OGMapperSVC_impl::requestCurrentBuiltMap(RTC::OGMap_out map)
 {
 	RTC::RETURN_VALUE result = RETVAL_OK;
-	map = new RTC::OGMap(m_pRTC->m_map);
+	//m_pRTC->updateMap();
+	map = new RTC::OGMap();
+	RTC::OGMap& currentMap = m_pRTC->m_map;
+	map->map.width = currentMap.map.width;
+	map->map.height = currentMap.map.height;
+	map->map.column = currentMap.map.column;
+	map->map.row = currentMap.map.row;
+	int len = currentMap.map.cells.length();
+	map->map.cells.length(len);
+	for(int i = 0;i < len;i++) {
+		map->map.cells[i] = currentMap.map.cells[i];
+	}
+	map->config.width = currentMap.config.width;
+	map->config.height = currentMap.config.height;
+	map->config.xScale = currentMap.config.xScale;
+	map->config.yScale = currentMap.config.yScale;
+	map->config.origin.position.x = currentMap.config.origin.position.x;
+	map->config.origin.position.y = currentMap.config.origin.position.y;
+	map->config.origin.heading = currentMap.config.origin.heading;
+	map->tm.sec = 0;
+	map->tm.nsec = 0;
 	return result;
 }
 
