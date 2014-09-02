@@ -50,18 +50,25 @@ RTC::RETURN_VALUE OGMapperSVC_impl::stopMapping()
 RTC::RETURN_VALUE OGMapperSVC_impl::suspendMapping()
 {
 	RTC::RETURN_VALUE result = RETVAL_NOT_IMPL;
+	m_pRTC->startMap(false);
 	return result;
 }
 
 RTC::RETURN_VALUE OGMapperSVC_impl::resumeMapping()
 {
 	RTC::RETURN_VALUE result = RETVAL_NOT_IMPL;
+	m_pRTC->startMap(true);
 	return result;
 }
 
 RTC::RETURN_VALUE OGMapperSVC_impl::getState(RTC::MAPPER_STATE& state)
 {
 	RTC::RETURN_VALUE result = RETVAL_NOT_IMPL;
+	if (m_pRTC->isMapStarted()) {
+		state = MAPPER_STATE::MAPPER_MAPPING;
+	} else {
+		state = MAPPER_STATE::MAPPER_STOPPED;
+	} 
 	return result;
 }
 

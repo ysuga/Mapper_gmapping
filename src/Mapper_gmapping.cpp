@@ -377,23 +377,27 @@ RTC::ReturnCode_t Mapper_gmapping::onExecute(RTC::UniqueId ec_id)
 			reading.setPose(gmap_pose);
 
 			if(!m_pGridSlamProcessor->processScan(reading)) {
-				std::cerr << "Error: processScan Failed." << std::endl;
+				//std::cerr << "Error: processScan Failed." << std::endl;
 			} else {
-				GMapping::OrientedPoint mpose = m_pGridSlamProcessor->getParticles()[m_pGridSlamProcessor->getBestParticleIndex()].pose;
-				m_estimatedPose.data.position.x = mpose.x;
-				m_estimatedPose.data.position.y = mpose.y;
-				m_estimatedPose.data.heading = mpose.theta;
-				setTimestamp<RTC::TimedPose2D>(m_estimatedPose);
-				m_estimatedPoseOut.write();
+				
 
 				double interval = scanTime - m_lastScanTime;
 				if(this->m_map_update_interval < interval) {
+					std::cout << "[Mapper_gmapping] Updating Map...." << std::endl;
 					if(!updateMap()) {
-						std::cerr << "Update Map Failed." << std::endl;
+						std::cout << "[Mapper_gmapping] Update Map Failed." << std::endl;
+					} else {
+						std::cout << "[Mapper_gmapping] Update Success." << std::endl;
 					}
 					m_lastScanTime = scanTime;
 				}
 			}
+			GMapping::OrientedPoint mpose = m_pGridSlamProcessor->getParticles()[m_pGridSlamProcessor->getBestParticleIndex()].pose;
+			m_estimatedPose.data.position.x = mpose.x;
+			m_estimatedPose.data.position.y = mpose.y;
+			m_estimatedPose.data.heading = mpose.theta;
+			setTimestamp<RTC::TimedPose2D>(m_estimatedPose);
+			m_estimatedPoseOut.write();
 
 		}
 
