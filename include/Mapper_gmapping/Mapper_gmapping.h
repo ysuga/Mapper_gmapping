@@ -368,31 +368,31 @@ class Mapper_gmapping
    * - Name: xmin xmin
    * - DefaultValue: -100
    */
-  float m_xmin;
+  double m_xmin;
   /*!
    * Initial map size
    * - Name: ymin ymin
    * - DefaultValue: -100
    */
-  float m_ymin;
+  double m_ymin;
   /*!
    * Initial map size
    * - Name: xmax xmax
    * - DefaultValue: 100
    */
-  float m_xmax;
+  double m_xmax;
   /*!
    * Initial map size
    * - Name: ymax ymax
    * - DefaultValue: 100
    */
-  float m_ymax;
+  double m_ymax;
   /*!
    * Processing parameters (resolution of the map)
    * - Name: delta delta
    * - DefaultValue: 0.05
    */
-  float m_delta;
+  double m_delta;
   /*!
    * Translational sampling range for the likelihood
    * - Name: llsamplerange llsamplerange

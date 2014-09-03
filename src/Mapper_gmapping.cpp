@@ -44,10 +44,10 @@ static const char* mapper_gmapping_spec[] =
     "conf.default.temporalUpdate", "-1.0",
     "conf.default.resampleThreshold", "0.5",
     "conf.default.particles", "30",
-    "conf.default.xmin", "-10",
-    "conf.default.ymin", "-10",
-    "conf.default.xmax", "10",
-    "conf.default.ymax", "10",
+    "conf.default.xmin", "-12",
+    "conf.default.ymin", "-12",
+    "conf.default.xmax", "12",
+    "conf.default.ymax", "12",
     "conf.default.delta", "0.05",
     "conf.default.llsamplerange", "0.01",
     "conf.default.llsamplestep", "0.01",
@@ -174,7 +174,7 @@ RTC::ReturnCode_t Mapper_gmapping::onInitialize()
   bindParameter("ymin", m_ymin, "-10");
   bindParameter("xmax", m_xmax, "10");
   bindParameter("ymax", m_ymax, "10");
-  bindParameter("delta", m_delta, "0.05");
+  bindParameter("delta", m_delta, "0.01");
   bindParameter("llsamplerange", m_llsamplerange, "0.01");
   bindParameter("llsamplestep", m_llsamplestep, "0.01");
   bindParameter("lasamplerange", m_lasamplerange, "0.005");
@@ -267,7 +267,9 @@ bool Mapper_gmapping::initMap(void) {
 	m_map.map.width = m_map.config.width;
 	m_map.map.height = m_map.config.height;
 	m_map.config.xScale = m_map.config.yScale = m_delta;
-	m_map.config.origin.position.x = m_map.config.origin.position.y = m_map.config.origin.heading = 0;
+	m_map.config.origin.position.x = m_xmin;
+	m_map.config.origin.position.y = m_ymin;
+	m_map.config.origin.heading = 0;
 	m_map.map.cells.length(m_map.config.width * m_map.config.height);
 
 	return true;
@@ -322,7 +324,9 @@ bool Mapper_gmapping::updateOGMap(RTC::OGMap& map) {
 
     m_map.config.width = smap.getMapSizeX();
     m_map.config.height = smap.getMapSizeY();
-    m_map.config.origin.position.x = m_xmin;
+	m_map.config.xScale = smap.getResolution();
+	m_map.config.yScale = smap.getResolution();
+	m_map.config.origin.position.x = m_xmin;
     m_map.config.origin.position.y = m_ymin;
 	m_map.map.width = m_map.config.width;
 	m_map.map.height = m_map.config.height;
