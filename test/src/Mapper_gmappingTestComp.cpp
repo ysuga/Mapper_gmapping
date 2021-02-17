@@ -1,6 +1,6 @@
 ﻿// -*- C++ -*-
 /*!
- * @file Mapper_gmappingComp.cpp
+ * @file Mapper_gmappingTestComp.cpp
  * @brief Standalone component
  * @date $Date$
  *
@@ -11,16 +11,16 @@
 #include <iostream>
 #include <string>
 #include <stdlib.h>
-#include "Mapper_gmapping.h"
+#include "Mapper_gmappingTest.h"
 
 
 void MyModuleInit(RTC::Manager* manager)
 {
-  Mapper_gmappingInit(manager);
+  Mapper_gmappingTestInit(manager);
   RTC::RtcBase* comp;
 
   // Create a component
-  comp = manager->createComponent("Mapper_gmapping");
+  comp = manager->createComponent("Mapper_gmappingTest");
 
   if (comp==NULL)
   {
@@ -75,6 +75,9 @@ int main (int argc, char** argv)
 {
   RTC::Manager* manager;
   manager = RTC::Manager::init(argc, argv);
+
+  // Initialize manager
+  manager->init(argc, argv);
 
   // Set module initialization proceduer
   // This procedure will be invoked in activateManager() function.

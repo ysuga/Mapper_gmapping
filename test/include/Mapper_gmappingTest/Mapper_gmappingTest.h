@@ -1,14 +1,14 @@
 ﻿// -*- C++ -*-
 /*!
- * @file  Mapper_gmapping.h
+ * @file  Mapper_gmappingTest.h
  * @brief Mapper RTC using gmapping
  * @date  $Date$
  *
  * $Id$
  */
 
-#ifndef MAPPER_GMAPPING_H
-#define MAPPER_GMAPPING_H
+#ifndef MAPPER_GMAPPING_TEST__H
+#define MAPPER_GMAPPING_TEST_H
 
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/ExtendedDataTypesSkel.h>
@@ -16,16 +16,20 @@
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
-#include "MapperSVC_impl.h"
+#include "MapServerSVC_impl.h"
+#include "InterfaceDataTypesSVC_impl.h"
+#include "ExtendedDataTypesSVC_impl.h"
 
 // </rtc-template>
 
 // Service Consumer stub headers
 // <rtc-template block="consumer_stub_h">
-#include "MapServerStub.h"
-#include "InterfaceDataTypesStub.h"
-#include "ExtendedDataTypesStub.h"
+#include "MapperStub.h"
 
+// </rtc-template>
+
+// Service Consumer stub headers
+// <rtc-template block="port_stub_h">
 // </rtc-template>
 
 #include <rtm/Manager.h>
@@ -34,22 +38,12 @@
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 
-#ifdef max
-#undef max
-#endif
-
-#ifdef min
-#undef min
-#endif
-
-#include "gmapping/gridfastslam/gridslamprocessor.h"
-#include "gmapping/sensor/sensor_base/sensor.h"
 /*!
- * @class Mapper_gmapping
+ * @class Mapper_gmappingTest
  * @brief Mapper RTC using gmapping
  *
  */
-class Mapper_gmapping
+class Mapper_gmappingTest
   : public RTC::DataFlowComponentBase
 {
  public:
@@ -57,12 +51,12 @@ class Mapper_gmapping
    * @brief constructor
    * @param manager Maneger Object
    */
-  Mapper_gmapping(RTC::Manager* manager);
+  Mapper_gmappingTest(RTC::Manager* manager);
 
   /*!
    * @brief destructor
    */
-  ~Mapper_gmapping();
+  ~Mapper_gmappingTest();
 
   // <rtc-template block="public_attribute">
   
@@ -75,6 +69,7 @@ class Mapper_gmapping
   /***
    *
    * The initialize action (on CREATED->ALIVE transition)
+   * formaer rtc_init_entry() 
    *
    * @return RTC::ReturnCode_t
    * 
@@ -85,6 +80,7 @@ class Mapper_gmapping
   /***
    *
    * The finalize action (on ALIVE->END transition)
+   * formaer rtc_exiting_entry()
    *
    * @return RTC::ReturnCode_t
    * 
@@ -95,6 +91,7 @@ class Mapper_gmapping
   /***
    *
    * The startup action when ExecutionContext startup
+   * former rtc_starting_entry()
    *
    * @param ec_id target ExecutionContext Id
    *
@@ -107,6 +104,7 @@ class Mapper_gmapping
   /***
    *
    * The shutdown action when ExecutionContext stop
+   * former rtc_stopping_entry()
    *
    * @param ec_id target ExecutionContext Id
    *
@@ -119,6 +117,7 @@ class Mapper_gmapping
   /***
    *
    * The activated action (Active state entry action)
+   * former rtc_active_entry()
    *
    * @param ec_id target ExecutionContext Id
    *
@@ -131,6 +130,7 @@ class Mapper_gmapping
   /***
    *
    * The deactivated action (Active state exit action)
+   * former rtc_active_exit()
    *
    * @param ec_id target ExecutionContext Id
    *
@@ -143,6 +143,7 @@ class Mapper_gmapping
   /***
    *
    * The execution action that is invoked periodically
+   * former rtc_active_do()
    *
    * @param ec_id target ExecutionContext Id
    *
@@ -155,6 +156,7 @@ class Mapper_gmapping
   /***
    *
    * The aborting action when main logic error occurred.
+   * former rtc_aborting_entry()
    *
    * @param ec_id target ExecutionContext Id
    *
@@ -167,6 +169,7 @@ class Mapper_gmapping
   /***
    *
    * The error action in ERROR state
+   * former rtc_error_do()
    *
    * @param ec_id target ExecutionContext Id
    *
@@ -179,6 +182,7 @@ class Mapper_gmapping
   /***
    *
    * The reset action that is invoked resetting
+   * This is same but different the former rtc_init_entry()
    *
    * @param ec_id target ExecutionContext Id
    *
@@ -191,6 +195,7 @@ class Mapper_gmapping
   /***
    *
    * The state update action that is invoked after onExecute() action
+   * no corresponding operation exists in OpenRTm-aist-0.2.0
    *
    * @param ec_id target ExecutionContext Id
    *
@@ -203,6 +208,7 @@ class Mapper_gmapping
   /***
    *
    * The action that is invoked when execution context's rate is changed
+   * no corresponding operation exists in OpenRTm-aist-0.2.0
    *
    * @param ec_id target ExecutionContext Id
    *
@@ -436,24 +442,24 @@ class Mapper_gmapping
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
-  RTC::RangeData m_range;
+  RTC::TimedPose2D m_estimatedPose;
   /*!
    */
-  RTC::InPort<RTC::RangeData> m_rangeIn;
-  RTC::TimedPose2D m_odometry;
-  /*!
-   */
-  RTC::InPort<RTC::TimedPose2D> m_odometryIn;
+  RTC::InPort<RTC::TimedPose2D> m_estimatedPoseIn;
   
   // </rtc-template>
 
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  RTC::TimedPose2D m_estimatedPose;
+  RTC::RangeData m_range;
   /*!
    */
-  RTC::OutPort<RTC::TimedPose2D> m_estimatedPoseOut;
+  RTC::OutPort<RTC::RangeData> m_rangeOut;
+  RTC::TimedPose2D m_odometry;
+  /*!
+   */
+  RTC::OutPort<RTC::TimedPose2D> m_odometryOut;
   
   // </rtc-template>
 
@@ -472,7 +478,7 @@ class Mapper_gmapping
   // <rtc-template block="service_declare">
   /*!
    */
-  NAVIGATION_OccupancyGridMapperSVC_impl m_mapper;
+  OccupancyGridMapServerSVC_impl m_NAVIGATION_OccupancyGridMapServer;
   
   // </rtc-template>
 
@@ -480,7 +486,7 @@ class Mapper_gmapping
   // <rtc-template block="consumer_declare">
   /*!
    */
-  RTC::CorbaConsumer<NAVIGATION::OccupancyGridMapServer> m_NAVIGATION_OccupancyGridMapServer;
+  RTC::CorbaConsumer<NAVIGATION::OccupancyGridMapper> m_mapper;
   
   // </rtc-template>
 
@@ -493,37 +499,12 @@ class Mapper_gmapping
   
   // </rtc-template>
 
-
-
-	 GMapping::GridSlamProcessor* m_pGridSlamProcessor;
-	 GMapping::RangeSensor *m_pRangeSensor;
-	 GMapping::OdometrySensor *m_pOdometrySensor;
-
-	 bool m_isScanReceived;
-	 bool m_isOdomReceived;
-	 bool m_isInit;
-
-	 bool m_isMapStarted;
-
-	 double m_lastScanTime;
-
- private:
- public:
-	bool initMap(void);
-	bool updateMap(void);
-	bool updateOGMap(NAVIGATION::OccupancyGridMap &map);
-
- public:
-	NAVIGATION::OccupancyGridMap m_map;
-
-	void startMap(bool flag) {m_isMapStarted = flag;}
-	bool isMapStarted() {return m_isMapStarted;}
 };
 
 
 extern "C"
 {
-  DLL_EXPORT void Mapper_gmappingInit(RTC::Manager* manager);
+  DLL_EXPORT void Mapper_gmappingTestInit(RTC::Manager* manager);
 };
 
-#endif // MAPPER_GMAPPING_H
+#endif // MAPPER_GMAPPING_TEST_H

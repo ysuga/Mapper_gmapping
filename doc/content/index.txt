@@ -1,4 +1,4 @@
-Mapper_gmappingName - English
+﻿Mapper_gmappingName - English
 ========================
 
 .. toctree::
@@ -137,6 +137,7 @@ lasamplestep     float              0.005            Angular sampling step for t
 transform_publish_period float              0.05             How long (in seconds) between transform publications.
 occ_thresh       float              0.25             Threshold on gmapping's occupancy values. Cells with greater occupancy are considered occupied (i.e., set to 100 in the resulting sensor_msgs/LaserScan).
 throttle_scans   int                1                throttle_scans
+map_update_interval float              5.0              How long (in seconds) between updates to the map. Lowering this number updates the occupancy grid more often, at the expense of greater computational load.
 ================ ================== ================ ======
 
 Ports
@@ -150,7 +151,8 @@ Name            Type        Data type                      Purpose
 range           InPort      RTC::RangeData                 
 odometry        InPort      RTC::TimedPose2D               
 estimatedPose   OutPort     RTC::TimedPose2D               
-OGMapper        ServicePort RTC::OGMapper                  
+OGMapper        ServicePort NAVIGATION::OccupancyGridMapper 
+NAVIGATION_OccupancyGridMapServer ServicePort NAVIGATION::OccupancyGridMapServer 
 =============== =========== ============================== =======
 
 Examples

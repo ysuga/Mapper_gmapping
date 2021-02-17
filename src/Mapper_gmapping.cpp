@@ -1,4 +1,4 @@
-// -*- C++ -*-
+﻿// -*- C++ -*-
 /*!
  * @file  Mapper_gmapping.cpp
  * @brief Mapper RTC using gmapping
@@ -16,7 +16,7 @@ static const char* mapper_gmapping_spec[] =
     "implementation_id", "Mapper_gmapping",
     "type_name",         "Mapper_gmapping",
     "description",       "Mapper RTC using gmapping",
-    "version",           "1.0.0",
+    "version",           "1.1.0",
     "vendor",            "ssr",
     "category",          "Navigation",
     "activity_type",     "EVENTDRIVEN",
@@ -56,7 +56,8 @@ static const char* mapper_gmapping_spec[] =
     "conf.default.transform_publish_period", "0.05",
     "conf.default.occ_thresh", "0.25",
     "conf.default.throttle_scans", "1",
-	"conf.default.map_update_interval", "5.0",
+    "conf.default.map_update_interval", "5.0",
+
     // Widget
     "conf.__widget__.debug", "text",
     "conf.__widget__.sigma", "text",
@@ -91,15 +92,43 @@ static const char* mapper_gmapping_spec[] =
     "conf.__widget__.throttle_scans", "text",
     "conf.__widget__.map_update_interval", "text",
     // Constraints
+
+    "conf.__type__.debug", "int",
+    "conf.__type__.sigma", "float",
+    "conf.__type__.kernelSize", "int",
+    "conf.__type__.lstep", "float",
+    "conf.__type__.astep", "float",
+    "conf.__type__.iterations", "int",
+    "conf.__type__.lsigma", "float",
+    "conf.__type__.ogain", "float",
+    "conf.__type__.lskip", "int",
+    "conf.__type__.minimumScore", "float",
+    "conf.__type__.srr", "float",
+    "conf.__type__.srt", "float",
+    "conf.__type__.str", "float",
+    "conf.__type__.stt", "float",
+    "conf.__type__.linearUpdate", "float",
+    "conf.__type__.angularUpdate", "float",
+    "conf.__type__.temporalUpdate", "float",
+    "conf.__type__.resampleThreshold", "float",
+    "conf.__type__.particles", "int",
+    "conf.__type__.xmin", "float",
+    "conf.__type__.ymin", "float",
+    "conf.__type__.xmax", "float",
+    "conf.__type__.ymax", "float",
+    "conf.__type__.delta", "float",
+    "conf.__type__.llsamplerange", "float",
+    "conf.__type__.llsamplestep", "float",
+    "conf.__type__.lasamplerange", "float",
+    "conf.__type__.lasamplestep", "float",
+    "conf.__type__.transform_publish_period", "float",
+    "conf.__type__.occ_thresh", "float",
+    "conf.__type__.throttle_scans", "int",
+    "conf.__type__.map_update_interval", "float",
+
     ""
   };
 // </rtc-template>
-
-#include "gmapping/gridfastslam/gridslamprocessor.h"
-#include "gmapping/sensor/sensor_base/sensor.h"
-#include "gmapping/sensor/sensor_range/rangesensor.h"
-#include "gmapping/sensor/sensor_odometry/odometrysensor.h"
-
 
 /*!
  * @brief constructor
@@ -111,7 +140,8 @@ Mapper_gmapping::Mapper_gmapping(RTC::Manager* manager)
     m_rangeIn("range", m_range),
     m_odometryIn("odometry", m_odometry),
     m_estimatedPoseOut("estimatedPose", m_estimatedPose),
-    m_gridMapperPort("gridMapper")
+    m_gridMapperPort("gridMapper"),
+    m_mapServerClientPort("mapServerClient")
 
     // </rtc-template>
 {
@@ -133,20 +163,21 @@ RTC::ReturnCode_t Mapper_gmapping::onInitialize()
   // Set InPort buffers
   addInPort("range", m_rangeIn);
   addInPort("odometry", m_odometryIn);
-  
+
   // Set OutPort buffer
   addOutPort("estimatedPose", m_estimatedPoseOut);
-  
+
   // Set service provider to Ports
-  m_gridMapperPort.registerProvider("OGMapper", "RTC::OGMapper", m_mapper);
+  m_gridMapperPort.registerProvider("NAVIGATION_OccupancyGridMapper", "NAVIGATION::OccupancyGridMapper", m_mapper);
+
+  // Set service consumers to Ports
+  m_mapServerClientPort.registerConsumer("NAVIGATION_OccupancyGridMapServer", "NAVIGATION::OccupancyGridMapServer", m_NAVIGATION_OccupancyGridMapServer);
 
   m_mapper.setRTC(this);
-  
-  // Set service consumers to Ports
-  
   // Set CORBA Service Ports
   addPort(m_gridMapperPort);
-  
+  addPort(m_mapServerClientPort);
+
   // </rtc-template>
 
   // <rtc-template block="bind_config">
@@ -170,11 +201,11 @@ RTC::ReturnCode_t Mapper_gmapping::onInitialize()
   bindParameter("temporalUpdate", m_temporalUpdate, "-1.0");
   bindParameter("resampleThreshold", m_resampleThreshold, "0.5");
   bindParameter("particles", m_particles, "30");
-  bindParameter("xmin", m_xmin, "-10");
-  bindParameter("ymin", m_ymin, "-10");
-  bindParameter("xmax", m_xmax, "10");
-  bindParameter("ymax", m_ymax, "10");
-  bindParameter("delta", m_delta, "0.01");
+  bindParameter("xmin", m_xmin, "-100");
+  bindParameter("ymin", m_ymin, "-100");
+  bindParameter("xmax", m_xmax, "100");
+  bindParameter("ymax", m_ymax, "100");
+  bindParameter("delta", m_delta, "0.05");
   bindParameter("llsamplerange", m_llsamplerange, "0.01");
   bindParameter("llsamplestep", m_llsamplestep, "0.01");
   bindParameter("lasamplerange", m_lasamplerange, "0.005");
@@ -182,9 +213,9 @@ RTC::ReturnCode_t Mapper_gmapping::onInitialize()
   bindParameter("transform_publish_period", m_transform_publish_period, "0.05");
   bindParameter("occ_thresh", m_occ_thresh, "0.25");
   bindParameter("throttle_scans", m_throttle_scans, "1");
-  bindParameter("map_update_intefval", m_map_update_interval, "5.0");
+  bindParameter("map_update_interval", m_map_update_interval, "5.0");
   // </rtc-template>
-  
+
   return RTC::RTC_OK;
 }
 
@@ -212,20 +243,21 @@ RTC::ReturnCode_t Mapper_gmapping::onShutdown(RTC::UniqueId ec_id)
 
 RTC::ReturnCode_t Mapper_gmapping::onActivated(RTC::UniqueId ec_id)
 {
-	m_pGridSlamProcessor = new GMapping::GridSlamProcessor();
+  m_pGridSlamProcessor = new GMapping::GridSlamProcessor();
 	m_isScanReceived = false;
 	m_isOdomReceived = false;;
 	m_isInit = false;
 	m_isMapStarted = false;
-	return RTC::RTC_OK;
+  return RTC::RTC_OK;
 }
 
 
 RTC::ReturnCode_t Mapper_gmapping::onDeactivated(RTC::UniqueId ec_id)
 {
 	delete m_pGridSlamProcessor;
-	return RTC::RTC_OK;
+  return RTC::RTC_OK;
 }
+
 
 
 bool Mapper_gmapping::initMap(void) {
@@ -258,19 +290,25 @@ bool Mapper_gmapping::initMap(void) {
 	GMapping::sampleGaussian(1,time(NULL));
 
 	// Initialize Map
-
-	m_map.config.width = (long)((m_xmax - m_xmin) / m_delta);
-	m_map.config.height = (long)((m_ymax - m_ymin) / m_delta);
-	m_map.config.height = (long)((m_ymax - m_ymin) / m_delta);
-	m_map.map.column = m_map.config.width - (long)(m_xmax/m_delta);
-	m_map.map.row = m_map.config.height - (long)(m_ymax/m_delta);
-	m_map.map.width = m_map.config.width;
-	m_map.map.height = m_map.config.height;
-	m_map.config.xScale = m_map.config.yScale = m_delta;
-	m_map.config.origin.position.x = m_xmin;
-	m_map.config.origin.position.y = m_ymin;
-	m_map.config.origin.heading = 0;
-	m_map.map.cells.length(m_map.config.width * m_map.config.height);
+  m_map.config.sizeOfGridMap.width = (long)((m_xmax - m_xmin) / m_delta);
+  m_map.config.sizeOfGridMap.height = (long)((m_ymax - m_ymin) / m_delta);
+  m_map.config.sizeOfGrid.width = m_delta;
+  m_map.config.sizeOfGrid.height = m_delta;
+  m_map.config.globalPositionOfTopLeft.position.x = m_xmin;
+  m_map.config.globalPositionOfTopLeft.position.y = m_ymax;
+  m_map.config.globalPositionOfTopLeft.heading = 0;
+	//m_map.config.width = (long)((m_xmax - m_xmin) / m_delta);
+	//m_map.config.height = (long)((m_ymax - m_ymin) / m_delta);
+	//m_map.config.height = (long)((m_ymax - m_ymin) / m_delta);
+	//m_map.map.column = m_map.config.width - (long)(m_xmax/m_delta);
+	//m_map.map.row = m_map.config.height - (long)(m_ymax/m_delta);
+	//m_map.map.width = m_map.config.width;
+	//m_map.map.height = m_map.config.height;
+	//m_map.config.xScale = m_map.config.yScale = m_delta;
+	//m_map.config.origin.position.x = m_xmin;
+	//m_map.config.origin.position.y = m_ymin;
+	//m_map.config.origin.heading = 0;
+	m_map.cells.length(m_map.config.sizeOfGridMap.width * m_map.config.sizeOfGridMap.height);
 
 	return true;
 }
@@ -279,13 +317,14 @@ bool Mapper_gmapping::updateMap(void) {
 	return updateOGMap(m_map);
 }
 
-bool Mapper_gmapping::updateOGMap(RTC::OGMap& map) {
+// TODO: Use optional
+bool Mapper_gmapping::updateOGMap(NAVIGATION::OccupancyGridMap& map) {
   GMapping::ScanMatcher matcher;
   double* laser_angles = new double[m_range.ranges.length()];
   double theta = m_range.config.minAngle;
   for(unsigned int i = 0; i < m_range.ranges.length();i++) {
     laser_angles[i]=theta;
-	theta += m_range.config.angularRes;
+	  theta += m_range.config.angularRes;
   }
 
   matcher.setLaserParameters(m_range.ranges.length(), laser_angles,
@@ -313,7 +352,7 @@ bool Mapper_gmapping::updateOGMap(RTC::OGMap& map) {
     matcher.registerScan(smap, n->pose, &((*n->reading)[0]));
   }
 
-  if(m_map.config.width != (unsigned int) smap.getMapSizeX() || m_map.config.height != (unsigned int) smap.getMapSizeY()) {
+  if(m_map.config.sizeOfGridMap.width != (unsigned int) smap.getMapSizeX() || m_map.config.sizeOfGridMap.height != (unsigned int) smap.getMapSizeY()) {
 
     // NOTE: The results of ScanMatcherMap::getSize() are different from the parameters given to the constructor
     //       so we must obtain the bounding box in a different way
@@ -322,37 +361,35 @@ bool Mapper_gmapping::updateOGMap(RTC::OGMap& map) {
     m_xmin = wmin.x; m_ymin = wmin.y;
     m_xmax = wmax.x; m_ymax = wmax.y;
 
-    m_map.config.width = smap.getMapSizeX();
-    m_map.config.height = smap.getMapSizeY();
-	m_map.config.xScale = smap.getResolution();
-	m_map.config.yScale = smap.getResolution();
-	m_map.config.origin.position.x = m_xmin;
-    m_map.config.origin.position.y = m_ymin;
-	m_map.map.width = m_map.config.width;
-	m_map.map.height = m_map.config.height;
-	m_map.map.cells.length(m_map.config.width * m_map.config.height);
+    m_map.config.sizeOfGridMap.width = smap.getMapSizeX();
+    m_map.config.sizeOfGridMap.width = smap.getMapSizeY();
+	  m_map.config.sizeOfGrid.width  = smap.getResolution();
+    m_map.config.sizeOfGrid.height = smap.getResolution();
+    m_map.config.globalPositionOfTopLeft.position.x = m_xmin;
+//    m_map.config.globalPositionOfTopLeft.position.y = m_ymin;
+    m_map.config.globalPositionOfTopLeft.position.y = m_ymax;
+    m_map.cells.length(m_map.config.sizeOfGridMap.width * m_map.config.sizeOfGridMap.height);
   }
 
-  for(int x=0; x < smap.getMapSizeX(); x++) {
-    for(int y=0; y < smap.getMapSizeY(); y++) {
-      GMapping::IntPoint p(x, y);
-      double occ = smap.cell(p);
+  for(int x = 0; x < smap.getMapSizeX(); x++) {
+    for(int y = 0; y < smap.getMapSizeY(); y++) {
+      double occ = smap.cell(GMapping::IntPoint(x,y));
+      int index = y * m_map.config.sizeOfGridMap.width + x;
       if(occ < 0) {
-		  m_map.map.cells[y * m_map.config.width + x] = 127;
-	  } else if(occ > m_occ_thresh) {
-		  m_map.map.cells[y * m_map.config.width + x] = 255;
+        m_map.cells[index] = NAVIGATION::MAP_BYTE_CELL_UNKNOWN_STATE; // previously 127;
+      } else if(occ > m_occ_thresh) {
+        m_map.cells[index] = NAVIGATION::MAP_BYTE_CELL_OCCUPIED_STATE; // previously 255
       } else {
-          m_map.map.cells[y * m_map.config.width + x] = 0;
-	  }
+        m_map.cells[index] = NAVIGATION::MAP_BYTE_CELL_FREE_STATE; // prevoiusly 0
+	    }
     }
   }
   return true;
 }
 
-
 RTC::ReturnCode_t Mapper_gmapping::onExecute(RTC::UniqueId ec_id)
 {
-	if(m_rangeIn.isNew()) {
+  if(m_rangeIn.isNew()) {
 		m_rangeIn.read();
 		m_range.config.maxRange = 20.0;
 		m_range.config.minRange = 0.2;
@@ -392,6 +429,9 @@ RTC::ReturnCode_t Mapper_gmapping::onExecute(RTC::UniqueId ec_id)
 						std::cout << "[Mapper_gmapping] Update Map Failed." << std::endl;
 					} else {
 						std::cout << "[Mapper_gmapping] Update Success." << std::endl;
+
+            m_NAVIGATION_OccupancyGridMapServer->updateWholeMap(m_map);
+
 					}
 					m_lastScanTime = scanTime;
 				}
@@ -419,7 +459,6 @@ RTC::ReturnCode_t Mapper_gmapping::onExecute(RTC::UniqueId ec_id)
 			m_lastScanTime =  m_range.tm.sec + ((double)m_range.tm.nsec)/1000000000;
 		}
 	}
-
   return RTC::RTC_OK;
 }
 
@@ -461,7 +500,7 @@ RTC::ReturnCode_t Mapper_gmapping::onRateChanged(RTC::UniqueId ec_id)
 
 extern "C"
 {
- 
+
   void Mapper_gmappingInit(RTC::Manager* manager)
   {
     coil::Properties profile(mapper_gmapping_spec);
@@ -469,7 +508,7 @@ extern "C"
                              RTC::Create<Mapper_gmapping>,
                              RTC::Delete<Mapper_gmapping>);
   }
-  
+
 };
 
 
