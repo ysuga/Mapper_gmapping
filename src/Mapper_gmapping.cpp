@@ -7,6 +7,9 @@
  * $Id$
  */
 
+#include <thread>
+#include <chrono>
+
 #include "Mapper_gmapping.h"
 
 // Module specification
@@ -240,47 +243,49 @@ RTC::ReturnCode_t Mapper_gmapping::onShutdown(RTC::UniqueId ec_id)
 }
 */
 
+GMapping::RangeSensor* getRangeSensorFromRangeData(const std::string& name, const RTC::RangeData& range) {
+  return new GMapping::RangeSensor("FLASER", 
+      range.ranges.length(), 
+      range.config.angularRes, 
+	    GMapping::OrientedPoint(
+        range.geometry.geometry.pose.position.x, 
+				range.geometry.geometry.pose.position.y, 
+				range.geometry.geometry.pose.position.z),
+	    0.0, 
+      range.config.maxRange);
+}
 
 RTC::ReturnCode_t Mapper_gmapping::onActivated(RTC::UniqueId ec_id)
 {
-  m_pGridSlamProcessor = new GMapping::GridSlamProcessor();
+  std::cout << "[Mapper_gmapping] onActivated called." << std::endl;
 	m_isScanReceived = false;
 	m_isOdomReceived = false;;
 	m_isInit = false;
 	m_isMapStarted = false;
   m_isMapStopping = false;
-  return RTC::RTC_OK;
-}
 
+  bool waitingRange = true;
+  bool waitingPose = true;
+  while(waitingRange || waitingPose) {
+    waitingRange = !m_rangeIn.isNew();
+    waitingPose  = !m_odometryIn.isNew();
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    if (waitingRange) std::cout << "[Mapper_gmapping] Waiting for RangeData is arrived." << std::endl;
+    if (waitingPose) std::cout << "[Mapper_gmapping] Waiting for Odometry (TimedPose2D) data is arrived." << std::endl;
+  }
+  m_rangeIn.read();
+  m_odometryIn.read();
+	m_pRangeSensor = getRangeSensorFromRangeData("FLASER", m_range);
 
-RTC::ReturnCode_t Mapper_gmapping::onDeactivated(RTC::UniqueId ec_id)
-{
-	delete m_pGridSlamProcessor;
-  return RTC::RTC_OK;
-}
-
-
-
-bool Mapper_gmapping::initMap(void) {
-	
-	m_pRangeSensor = new GMapping::RangeSensor("FLASER", m_range.ranges.length(), m_range.config.angularRes, 
-	GMapping::OrientedPoint(m_range.geometry.geometry.pose.position.x, 
-							m_range.geometry.geometry.pose.position.y, 
-							m_range.geometry.geometry.pose.position.z),
-	0.0, m_range.config.maxRange);
-
-	GMapping::OrientedPoint initialPose = GMapping::OrientedPoint(0.0, 0.0, 0.0);
-
+  m_pGridSlamProcessor = new GMapping::GridSlamProcessor();
 	GMapping::SensorMap smap;
 	smap.insert(make_pair(m_pRangeSensor->getName(), m_pRangeSensor));
-
-
 	m_pGridSlamProcessor->setSensorMap(smap);
-
 	m_pGridSlamProcessor->setMotionModelParameters(m_srr, m_srt, m_str, m_stt);
 	m_pGridSlamProcessor->setUpdateDistances(m_linearUpdate, m_angularUpdate, m_resampleThreshold);
 	m_pGridSlamProcessor->setUpdatePeriod(m_temporalUpdate);
 	m_pGridSlamProcessor->setgenerateMap(false);
+	GMapping::OrientedPoint initialPose = GMapping::OrientedPoint(0.0, 0.0, 0.0);
 	m_pGridSlamProcessor->GridSlamProcessor::init(m_particles, m_xmin, m_ymin, m_xmax, m_ymax,
 					m_delta, initialPose);
 	m_pGridSlamProcessor->setllsamplerange(m_llsamplerange);
@@ -288,7 +293,7 @@ bool Mapper_gmapping::initMap(void) {
 
 	m_pGridSlamProcessor->setminimumScore(m_minimumScore);
 
-	GMapping::sampleGaussian(1,time(NULL));
+	//GMapping::sampleGaussian(1,time(NULL));
 
 	// Initialize Map
   m_map.config.sizeOfGridMap.width = (long)((m_xmax - m_xmin) / m_delta);
@@ -310,7 +315,18 @@ bool Mapper_gmapping::initMap(void) {
 	//m_map.config.origin.position.y = m_ymin;
 	//m_map.config.origin.heading = 0;
 	m_map.cells.length(m_map.config.sizeOfGridMap.width * m_map.config.sizeOfGridMap.height);
+  return RTC::RTC_OK;
+}
 
+
+RTC::ReturnCode_t Mapper_gmapping::onDeactivated(RTC::UniqueId ec_id)
+{
+	delete m_pGridSlamProcessor;
+  return RTC::RTC_OK;
+}
+
+
+bool Mapper_gmapping::initMap(void) {
 	return true;
 }
 
