@@ -504,6 +504,7 @@ class Mapper_gmapping
 	 bool m_isInit;
 
 	 bool m_isMapStarted;
+   bool m_isMapStopping;
 
 	 double m_lastScanTime;
 
@@ -516,7 +517,13 @@ class Mapper_gmapping
  public:
 	NAVIGATION::OccupancyGridMap m_map;
 
-	void startMap(bool flag) {m_isMapStarted = flag;}
+	void startMap(bool flag) {
+    if (flag) {
+      m_isMapStarted = flag;
+    } else {
+      m_isMapStopping = true;
+    }
+  }
 	bool isMapStarted() {return m_isMapStarted;}
 };
 

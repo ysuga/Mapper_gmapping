@@ -37,12 +37,14 @@ NAVIGATION::MAPPER_RETURN_VALUE NAVIGATION_OccupancyGridMapperSVC_impl::initiali
 
 NAVIGATION::MAPPER_RETURN_VALUE NAVIGATION_OccupancyGridMapperSVC_impl::startMapping()
 {
+  std::cout << "NAVIGATION_OccupanyGridMapperSVC_impl::startMapping() called" << std::endl;
 	m_pRTC->startMap(true);
   return NAVIGATION::MAPPER_OK;
 }
 
 NAVIGATION::MAPPER_RETURN_VALUE NAVIGATION_OccupancyGridMapperSVC_impl::stopMapping()
 {
+  std::cout << "NAVIGATION_OccupanyGridMapperSVC_impl::stopMapping() called" << std::endl;
 	m_pRTC->startMap(false);
   return NAVIGATION::MAPPER_OK;
 }

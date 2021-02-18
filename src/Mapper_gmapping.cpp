@@ -248,6 +248,7 @@ RTC::ReturnCode_t Mapper_gmapping::onActivated(RTC::UniqueId ec_id)
 	m_isOdomReceived = false;;
 	m_isInit = false;
 	m_isMapStarted = false;
+  m_isMapStopping = false;
   return RTC::RTC_OK;
 }
 
@@ -317,23 +318,30 @@ bool Mapper_gmapping::updateMap(void) {
 	return updateOGMap(m_map);
 }
 
+void setLaserToMatcher(GMapping::ScanMatcher& matcher, const RTC::RangeData& range, GMapping::RangeSensor* pRangeSensor) {
+  double* laser_angles = new double[range.ranges.length()];
+  double theta = range.config.minAngle;
+  for(unsigned int i = 0; i < range.ranges.length();i++) {
+    laser_angles[i]=theta;
+	  theta += range.config.angularRes;
+  }
+
+  matcher.setLaserParameters(range.ranges.length(), laser_angles,
+                             pRangeSensor->getPose());
+
+  delete[] laser_angles;
+  matcher.setlaserMaxRange(range.config.maxRange);
+  matcher.setusableRange(range.config.maxRange);
+  matcher.setgenerateMap(true);
+
+
+}
+
+
 // TODO: Use optional
 bool Mapper_gmapping::updateOGMap(NAVIGATION::OccupancyGridMap& map) {
   GMapping::ScanMatcher matcher;
-  double* laser_angles = new double[m_range.ranges.length()];
-  double theta = m_range.config.minAngle;
-  for(unsigned int i = 0; i < m_range.ranges.length();i++) {
-    laser_angles[i]=theta;
-	  theta += m_range.config.angularRes;
-  }
-
-  matcher.setLaserParameters(m_range.ranges.length(), laser_angles,
-                             m_pRangeSensor->getPose());
-
-  delete[] laser_angles;
-  matcher.setlaserMaxRange(m_range.config.maxRange);
-  matcher.setusableRange(m_range.config.maxRange);
-  matcher.setgenerateMap(true);
+  setLaserToMatcher(matcher, m_range, m_pRangeSensor);
 
   GMapping::GridSlamProcessor::Particle best =
           m_pGridSlamProcessor->getParticles()[m_pGridSlamProcessor->getBestParticleIndex()];
@@ -345,8 +353,9 @@ bool Mapper_gmapping::updateOGMap(NAVIGATION::OccupancyGridMap& map) {
   GMapping::ScanMatcherMap smap(center, m_xmin, m_ymin, m_xmax, m_ymax, m_delta);
 
   for(GMapping::GridSlamProcessor::TNode* n = best.node; n; n = n->parent) {
-    if(!n->reading) { continue; // Reading is NULL
-	}
+    if(!n->reading) { 
+      continue; // Reading is NULL 
+    }
     matcher.invalidateActiveArea();
     matcher.computeActiveArea(smap, n->pose, &((*n->reading)[0]));
     matcher.registerScan(smap, n->pose, &((*n->reading)[0]));
@@ -361,8 +370,8 @@ bool Mapper_gmapping::updateOGMap(NAVIGATION::OccupancyGridMap& map) {
     m_xmin = wmin.x; m_ymin = wmin.y;
     m_xmax = wmax.x; m_ymax = wmax.y;
 
-    m_map.config.sizeOfGridMap.width = smap.getMapSizeX();
-    m_map.config.sizeOfGridMap.width = smap.getMapSizeY();
+    m_map.config.sizeOfGridMap.width  = smap.getMapSizeX();
+    m_map.config.sizeOfGridMap.height = smap.getMapSizeY();
 	  m_map.config.sizeOfGrid.width  = smap.getResolution();
     m_map.config.sizeOfGrid.height = smap.getResolution();
     m_map.config.globalPositionOfTopLeft.position.x = m_xmin;
@@ -374,7 +383,7 @@ bool Mapper_gmapping::updateOGMap(NAVIGATION::OccupancyGridMap& map) {
   for(int x = 0; x < smap.getMapSizeX(); x++) {
     for(int y = 0; y < smap.getMapSizeY(); y++) {
       double occ = smap.cell(GMapping::IntPoint(x,y));
-      int index = y * m_map.config.sizeOfGridMap.width + x;
+      int index = (smap.getMapSizeY() - y - 1) * m_map.config.sizeOfGridMap.width + x;
       if(occ < 0) {
         m_map.cells[index] = NAVIGATION::MAP_BYTE_CELL_UNKNOWN_STATE; // previously 127;
       } else if(occ > m_occ_thresh) {
@@ -387,59 +396,64 @@ bool Mapper_gmapping::updateOGMap(NAVIGATION::OccupancyGridMap& map) {
   return true;
 }
 
+GMapping::RangeReading convertRange(const RTC::RangeData& rangeData, GMapping::RangeSensor *pRangeSensor, const RTC::TimedPose2D& odometry) {
+  double* ranges_double = new double[rangeData.ranges.length()];
+  for(unsigned int i = 0;i < rangeData.ranges.length();i++) {
+    if(rangeData.ranges[i] < rangeData.config.minRange) {
+      ranges_double[i] = rangeData.config.minRange;
+    } else {
+      ranges_double[i] = rangeData.ranges[i];
+    }
+  }
+  GMapping::RangeReading reading(rangeData.ranges.length(),
+                                 ranges_double,
+                                 pRangeSensor,
+                                 ((double)rangeData.tm.sec + ((double)rangeData.tm.nsec)/1000000000));
+	delete[] ranges_double;
+	reading.setPose(GMapping::OrientedPoint(
+  	odometry.data.position.x,
+		odometry.data.position.y,
+		odometry.data.heading));
+  return reading;
+}
+
+RTC::Pose2D convertPose(const GMapping::OrientedPoint& mpose) {
+  RTC::Pose2D pose;
+	pose.position.x = mpose.x;
+	pose.position.y = mpose.y;
+	pose.heading = mpose.theta;
+  return pose;
+}
+
+
 RTC::ReturnCode_t Mapper_gmapping::onExecute(RTC::UniqueId ec_id)
 {
+  if (m_isMapStarted && m_isMapStopping) {
+    m_isMapStarted = false;
+  }
+
+
   if(m_rangeIn.isNew()) {
 		m_rangeIn.read();
 		m_range.config.maxRange = 20.0;
 		m_range.config.minRange = 0.2;
 		double scanTime = m_range.tm.sec + ((double)m_range.tm.nsec)/1000000000;
 		if(m_isInit && m_isMapStarted) {
-			double* ranges_double = new double[m_range.ranges.length()];
-			for(unsigned int i = 0;i < m_range.ranges.length();i++) {
-				if(m_range.ranges[i] < m_range.config.minRange) {
-					ranges_double[i] = m_range.config.minRange;
-				} else {
-					ranges_double[i] = m_range.ranges[i];
-				}
-			}
-			
-			GMapping::RangeReading reading(m_range.ranges.length(),
-                                 ranges_double,
-                                 m_pRangeSensor,
-                                 ((double)m_range.tm.sec + ((double)m_range.tm.nsec)/1000000000));
-			delete[] ranges_double;
-
-			GMapping::OrientedPoint gmap_pose = GMapping::OrientedPoint(
-				m_odometry.data.position.x,
-				m_odometry.data.position.y,
-				m_odometry.data.heading);
-
-			reading.setPose(gmap_pose);
-
-			if(!m_pGridSlamProcessor->processScan(reading)) {
+			if(!m_pGridSlamProcessor->processScan(convertRange(m_range, m_pRangeSensor, m_odometry))) {
 				//std::cerr << "Error: processScan Failed." << std::endl;
 			} else {
-				
-
-				double interval = scanTime - m_lastScanTime;
-				if(this->m_map_update_interval < interval) {
+				if(this->m_map_update_interval < (scanTime - m_lastScanTime)) {
 					std::cout << "[Mapper_gmapping] Updating Map...." << std::endl;
-					if(!updateMap()) {
-						std::cout << "[Mapper_gmapping] Update Map Failed." << std::endl;
-					} else {
+					if(updateMap()) {
 						std::cout << "[Mapper_gmapping] Update Success." << std::endl;
-
             m_NAVIGATION_OccupancyGridMapServer->updateWholeMap(m_map);
-
+          } else {
+            std::cout << "[Mapper_gmapping] Update Map Failed." << std::endl;
 					}
 					m_lastScanTime = scanTime;
 				}
 			}
-			GMapping::OrientedPoint mpose = m_pGridSlamProcessor->getParticles()[m_pGridSlamProcessor->getBestParticleIndex()].pose;
-			m_estimatedPose.data.position.x = mpose.x;
-			m_estimatedPose.data.position.y = mpose.y;
-			m_estimatedPose.data.heading = mpose.theta;
+      m_estimatedPose.data = convertPose(m_pGridSlamProcessor->getParticles()[m_pGridSlamProcessor->getBestParticleIndex()].pose);
 			setTimestamp<RTC::TimedPose2D>(m_estimatedPose);
 			m_estimatedPoseOut.write();
 
