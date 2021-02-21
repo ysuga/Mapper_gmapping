@@ -12,6 +12,8 @@
 
 #include "Mapper_gmapping.h"
 
+#include "gmapping_wrapper.h"
+
 // Module specification
 // <rtc-template block="module_spec">
 static const char* mapper_gmapping_spec[] =
@@ -243,18 +245,6 @@ RTC::ReturnCode_t Mapper_gmapping::onShutdown(RTC::UniqueId ec_id)
 }
 */
 
-GMapping::RangeSensor* getRangeSensorFromRangeData(const std::string& name, const RTC::RangeData& range) {
-  return new GMapping::RangeSensor("FLASER", 
-      range.ranges.length(), 
-      range.config.angularRes, 
-	    GMapping::OrientedPoint(
-        range.geometry.geometry.pose.position.x, 
-				range.geometry.geometry.pose.position.y, 
-				range.geometry.geometry.pose.position.z),
-	    0.0, 
-      range.config.maxRange);
-}
-
 RTC::ReturnCode_t Mapper_gmapping::onActivated(RTC::UniqueId ec_id)
 {
   std::cout << "[Mapper_gmapping] onActivated called." << std::endl;
@@ -336,26 +326,6 @@ bool Mapper_gmapping::updateMap(void) {
 	return updateOGMap(m_map);
 }
 
-void setLaserToMatcher(GMapping::ScanMatcher& matcher, const RTC::RangeData& range, GMapping::RangeSensor* pRangeSensor) {
-  double* laser_angles = new double[range.ranges.length()];
-  double theta = range.config.minAngle;
-  for(unsigned int i = 0; i < range.ranges.length();i++) {
-    laser_angles[i]=theta;
-	  theta += range.config.angularRes;
-  }
-
-  matcher.setLaserParameters(range.ranges.length(), laser_angles,
-                             pRangeSensor->getPose());
-
-  delete[] laser_angles;
-  const double e = 0.1; // 0.1 mm
-  matcher.setlaserMaxRange(range.config.maxRange);
-  matcher.setusableRange(range.config.maxRange-e);
-  matcher.setgenerateMap(true);
-
-
-}
-
 
 // TODO: Use optional
 bool Mapper_gmapping::updateOGMap(NAVIGATION::OccupancyGridMap& map) {
@@ -413,35 +383,6 @@ bool Mapper_gmapping::updateOGMap(NAVIGATION::OccupancyGridMap& map) {
     }
   }
   return true;
-}
-
-GMapping::RangeReading convertRange(const RTC::RangeData& rangeData, GMapping::RangeSensor *pRangeSensor, const RTC::TimedPose2D& odometry) {
-  double* ranges_double = new double[rangeData.ranges.length()];
-  for(unsigned int i = 0;i < rangeData.ranges.length();i++) {
-    if(rangeData.ranges[i] < rangeData.config.minRange) {
-      ranges_double[i] = rangeData.config.minRange;
-    } else {
-      ranges_double[i] = rangeData.ranges[i];
-    }
-  }
-  GMapping::RangeReading reading(rangeData.ranges.length(),
-                                 ranges_double,
-                                 pRangeSensor,
-                                 ((double)rangeData.tm.sec + ((double)rangeData.tm.nsec)/1000000000));
-	delete[] ranges_double;
-	reading.setPose(GMapping::OrientedPoint(
-  	odometry.data.position.x,
-		odometry.data.position.y,
-		odometry.data.heading));
-  return reading;
-}
-
-RTC::Pose2D convertPose(const GMapping::OrientedPoint& mpose) {
-  RTC::Pose2D pose;
-	pose.position.x = mpose.x;
-	pose.position.y = mpose.y;
-	pose.heading = mpose.theta;
-  return pose;
 }
 
 

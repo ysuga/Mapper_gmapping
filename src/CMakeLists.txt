@@ -1,4 +1,4 @@
-set(comp_srcs Mapper_gmapping.cpp MapperSVC_impl.cpp )
+set(comp_srcs Mapper_gmapping.cpp MapperSVC_impl.cpp gmapping_wrapper.cpp)
 set(standalone_srcs Mapper_gmappingComp.cpp)
 
 if(${OPENRTM_VERSION_MAJOR} LESS 2)
