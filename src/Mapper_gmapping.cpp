@@ -14,6 +14,8 @@
 
 #include "gmapping_wrapper.h"
 
+// #define MEASURE_TIME 
+
 // Module specification
 // <rtc-template block="module_spec">
 static const char* mapper_gmapping_spec[] =
@@ -245,12 +247,36 @@ RTC::ReturnCode_t Mapper_gmapping::onShutdown(RTC::UniqueId ec_id)
 }
 */
 
+
+
 RTC::ReturnCode_t Mapper_gmapping::onActivated(RTC::UniqueId ec_id)
 {
   std::cout << "[Mapper_gmapping] onActivated called." << std::endl;
-	m_isScanReceived = false;
-	m_isOdomReceived = false;;
-	m_isInit = false;
+  MapConfig mapConfig;
+  mapConfig.xmin = m_xmin;
+  mapConfig.xmax = m_xmax;
+  mapConfig.ymin = m_ymin;
+  mapConfig.ymax = m_ymax;
+  mapConfig.delta = m_delta;
+
+  MotionModelParam motion;
+  motion.srr = m_srr;
+  motion.srt = m_srt;
+  motion.str = m_str;
+  motion.stt = m_stt;
+
+  UpdateParam updateParam;
+  updateParam.linearUpdate = m_linearUpdate;
+  updateParam.angularUpdate = m_angularUpdate;
+  updateParam.temporalUpdate = m_temporalUpdate;
+  updateParam.resampleThreshold = m_resampleThreshold;
+
+  SamplerParam sampleParam;
+  sampleParam.numParticles = m_particles;
+  sampleParam.llsamplerange = m_llsamplerange;
+  sampleParam.llsamplestep = m_llsamplestep;
+  sampleParam.minimumScore = m_minimumScore;
+  
 	m_isMapStarted = false;
   m_isMapStopping = false;
 
@@ -266,46 +292,13 @@ RTC::ReturnCode_t Mapper_gmapping::onActivated(RTC::UniqueId ec_id)
   m_rangeIn.read();
   m_odometryIn.read();
 	m_pRangeSensor = getRangeSensorFromRangeData("FLASER", m_range);
-
-  m_pGridSlamProcessor = new GMapping::GridSlamProcessor();
-	GMapping::SensorMap smap;
-	smap.insert(make_pair(m_pRangeSensor->getName(), m_pRangeSensor));
-	m_pGridSlamProcessor->setSensorMap(smap);
-	m_pGridSlamProcessor->setMotionModelParameters(m_srr, m_srt, m_str, m_stt);
-	m_pGridSlamProcessor->setUpdateDistances(m_linearUpdate, m_angularUpdate, m_resampleThreshold);
-	m_pGridSlamProcessor->setUpdatePeriod(m_temporalUpdate);
-	m_pGridSlamProcessor->setgenerateMap(false);
-	GMapping::OrientedPoint initialPose = GMapping::OrientedPoint(0.0, 0.0, 0.0);
-	m_pGridSlamProcessor->GridSlamProcessor::init(m_particles, m_xmin, m_ymin, m_xmax, m_ymax,
-					m_delta, initialPose);
-	m_pGridSlamProcessor->setllsamplerange(m_llsamplerange);
-	m_pGridSlamProcessor->setllsamplestep(m_llsamplestep);
-
-	m_pGridSlamProcessor->setminimumScore(m_minimumScore);
-
+  m_pGridSlamProcessor = getGridSlamProcessor(m_pRangeSensor, mapConfig, motion, updateParam, sampleParam);
 	//GMapping::sampleGaussian(1,time(NULL));
 
+	m_lastScanTime =  m_range.tm.sec + ((double)m_range.tm.nsec)/1000000000;
 	// Initialize Map
-  m_map.config.sizeOfGridMap.width = (long)((m_xmax - m_xmin) / m_delta);
-  m_map.config.sizeOfGridMap.height = (long)((m_ymax - m_ymin) / m_delta);
-  m_map.config.sizeOfGrid.width = m_delta;
-  m_map.config.sizeOfGrid.height = m_delta;
-  m_map.config.globalPositionOfTopLeft.position.x = m_xmin;
-  m_map.config.globalPositionOfTopLeft.position.y = m_ymax;
-  m_map.config.globalPositionOfTopLeft.heading = 0;
-	//m_map.config.width = (long)((m_xmax - m_xmin) / m_delta);
-	//m_map.config.height = (long)((m_ymax - m_ymin) / m_delta);
-	//m_map.config.height = (long)((m_ymax - m_ymin) / m_delta);
-	//m_map.map.column = m_map.config.width - (long)(m_xmax/m_delta);
-	//m_map.map.row = m_map.config.height - (long)(m_ymax/m_delta);
-	//m_map.map.width = m_map.config.width;
-	//m_map.map.height = m_map.config.height;
-	//m_map.config.xScale = m_map.config.yScale = m_delta;
-	//m_map.config.origin.position.x = m_xmin;
-	//m_map.config.origin.position.y = m_ymin;
-	//m_map.config.origin.heading = 0;
+  m_map.config = convert(mapConfig);
 	m_map.cells.length(m_map.config.sizeOfGridMap.width * m_map.config.sizeOfGridMap.height);
-
   m_isMapInitialized = false;
   return RTC::RTC_OK;
 }
@@ -317,75 +310,6 @@ RTC::ReturnCode_t Mapper_gmapping::onDeactivated(RTC::UniqueId ec_id)
   return RTC::RTC_OK;
 }
 
-
-bool Mapper_gmapping::initMap(void) {
-	return true;
-}
-
-bool Mapper_gmapping::updateMap(void) {
-	return updateOGMap(m_map);
-}
-
-
-// TODO: Use optional
-bool Mapper_gmapping::updateOGMap(NAVIGATION::OccupancyGridMap& map) {
-  GMapping::ScanMatcher matcher;
-  setLaserToMatcher(matcher, m_range, m_pRangeSensor);
-
-  GMapping::GridSlamProcessor::Particle best =
-          m_pGridSlamProcessor->getParticles()[m_pGridSlamProcessor->getBestParticleIndex()];
-
-  GMapping::Point center;
-  center.x=(m_xmin + m_xmax) / 2.0;
-  center.y=(m_ymin + m_ymax) / 2.0;
-
-  GMapping::ScanMatcherMap smap(center, m_xmin, m_ymin, m_xmax, m_ymax, m_delta);
-
-  for(GMapping::GridSlamProcessor::TNode* n = best.node; n; n = n->parent) {
-    if(!n->reading) { 
-      continue; // Reading is NULL 
-    }
-    matcher.invalidateActiveArea();
-    matcher.computeActiveArea(smap, n->pose, &((*n->reading)[0]));
-    matcher.registerScan(smap, n->pose, &((*n->reading)[0]));
-  }
-
-  if(m_map.config.sizeOfGridMap.width != (unsigned int) smap.getMapSizeX() || m_map.config.sizeOfGridMap.height != (unsigned int) smap.getMapSizeY()) {
-
-    // NOTE: The results of ScanMatcherMap::getSize() are different from the parameters given to the constructor
-    //       so we must obtain the bounding box in a different way
-    GMapping::Point wmin = smap.map2world(GMapping::IntPoint(0, 0));
-    GMapping::Point wmax = smap.map2world(GMapping::IntPoint(smap.getMapSizeX(), smap.getMapSizeY()));
-    m_xmin = wmin.x; m_ymin = wmin.y;
-    m_xmax = wmax.x; m_ymax = wmax.y;
-
-    m_map.config.sizeOfGridMap.width  = smap.getMapSizeX();
-    m_map.config.sizeOfGridMap.height = smap.getMapSizeY();
-	  m_map.config.sizeOfGrid.width  = smap.getResolution();
-    m_map.config.sizeOfGrid.height = smap.getResolution();
-    m_map.config.globalPositionOfTopLeft.position.x = m_xmin;
-//    m_map.config.globalPositionOfTopLeft.position.y = m_ymin;
-    m_map.config.globalPositionOfTopLeft.position.y = m_ymax;
-    m_map.cells.length(m_map.config.sizeOfGridMap.width * m_map.config.sizeOfGridMap.height);
-  }
-
-  for(int x = 0; x < smap.getMapSizeX(); x++) {
-    for(int y = 0; y < smap.getMapSizeY(); y++) {
-      double occ = smap.cell(GMapping::IntPoint(x,y));
-      int index = (smap.getMapSizeY() - y - 1) * m_map.config.sizeOfGridMap.width + x;
-      if(occ < 0) {
-        m_map.cells[index] = NAVIGATION::MAP_BYTE_CELL_UNKNOWN_STATE; // previously 127;
-      } else if(occ > m_occ_thresh) {
-        m_map.cells[index] = NAVIGATION::MAP_BYTE_CELL_OCCUPIED_STATE; // previously 255
-      } else {
-        m_map.cells[index] = NAVIGATION::MAP_BYTE_CELL_FREE_STATE; // prevoiusly 0
-	    }
-    }
-  }
-  return true;
-}
-
-
 RTC::ReturnCode_t Mapper_gmapping::onExecute(RTC::UniqueId ec_id)
 {
   if (m_isMapStarted && m_isMapStopping) {
@@ -393,47 +317,59 @@ RTC::ReturnCode_t Mapper_gmapping::onExecute(RTC::UniqueId ec_id)
   }
 
 
-  if(m_rangeIn.isNew()) {
-		m_rangeIn.read();
-		//m_range.config.maxRange = 20.0;
-		//m_range.config.minRange = 0.2;
-		double scanTime = m_range.tm.sec + ((double)m_range.tm.nsec)/1000000000;
-		if(m_isInit && m_isMapStarted) {
-			if(!m_pGridSlamProcessor->processScan(convertRange(m_range, m_pRangeSensor, m_odometry))) {
-				//std::cerr << "Error: processScan Failed." << std::endl;
-			} else {
-				if(!m_isMapInitialized || (this->m_map_update_interval < (scanTime - m_lastScanTime))) {
-					std::cout << "[Mapper_gmapping] Updating Map...." << std::endl;
-					if(updateMap()) {
-						std::cout << "[Mapper_gmapping] Update Success." << std::endl;
-            m_NAVIGATION_OccupancyGridMapServer->updateWholeMap(m_map);
-          } else {
-            std::cout << "[Mapper_gmapping] Update Map Failed." << std::endl;
-					}
-					m_lastScanTime = scanTime;
-          m_isMapInitialized = true;
-				}
-			}
-      m_estimatedPose.data = convertPose(m_pGridSlamProcessor->getParticles()[m_pGridSlamProcessor->getBestParticleIndex()].pose);
-			setTimestamp<RTC::TimedPose2D>(m_estimatedPose);
-			m_estimatedPoseOut.write();
-
-		}
-
-		m_isScanReceived = true;
-	}
-
 	if(m_odometryIn.isNew()) {
 		m_odometryIn.read();
-		m_isOdomReceived = true;
+    if (!m_isMapStarted) {
+      m_estimatedPose = m_odometry;
+      m_estimatedPoseOut.write();
+    }
 	}
 
-	if(m_isOdomReceived && m_isScanReceived) {
-		if (!m_isInit) {
-			m_isInit = initMap();
-			m_lastScanTime =  m_range.tm.sec + ((double)m_range.tm.nsec)/1000000000;
-		}
-	}
+  if(m_rangeIn.isNew()) {
+		m_rangeIn.read();
+		const double scanTime = m_range.tm.sec + ((double)m_range.tm.nsec)/1000000000;
+    //std::cout << "scan/last=" << scanTime << "/" << m_lastScanTime << std::endl;
+    if (m_isMapStarted) {
+      bool scanResult = false;
+      {
+#ifdef MEASURE_TIME
+        std::cout << "[Mapper_gmapping] processingScan ...." << std::endl;
+        std::chrono::system_clock::time_point  start, end; // 型は auto で可
+        start = std::chrono::system_clock::now(); // 計測開始時間
+#endif
+        scanResult = m_pGridSlamProcessor->processScan(convertRange(m_range, m_pRangeSensor, m_odometry));
+#ifdef MEASURE_TIME
+        end = std::chrono::system_clock::now();  // 計測終了時間
+        double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count(); 
+        std::cout << "[Mapper_gmapping] processScan takes " << elapsed << " milliseconds." << std::endl;
+#endif
+      }
+      if (scanResult) {
+        if(!m_isMapInitialized || (this->m_map_update_interval < (scanTime - m_lastScanTime))) {
+          std::cout << "[Mapper_gmapping] Updating Map...." << std::endl;
+          auto ret = updateOGMap(m_pGridSlamProcessor, m_pRangeSensor, m_map, m_range, m_occ_thresh);
+          std::cout << "[Mapper_gmapping] Update Success." << std::endl;
+          {
+#ifdef MEASURE_TIME
+            std::chrono::system_clock::time_point  start, end; // 型は auto で可
+            start = std::chrono::system_clock::now(); // 計測開始時間
+#endif
+            m_NAVIGATION_OccupancyGridMapServer->updateWholeMap(m_map);
+#ifdef MEASURE_TIME
+            end = std::chrono::system_clock::now();  // 計測終了時間
+            double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count(); 
+            std::cout << "[Mapper_gmapping] OccupancyGridMapServer::updateWholeMap takes " << elapsed << " milliseconds." << std::endl;
+#endif
+          }
+          m_lastScanTime = scanTime;
+          m_isMapInitialized = true;
+        }
+      }
+      m_estimatedPose.data = convertPose(m_pGridSlamProcessor->getParticles()[m_pGridSlamProcessor->getBestParticleIndex()].pose);
+      setTimestamp<RTC::TimedPose2D>(m_estimatedPose);
+      m_estimatedPoseOut.write();
+    }
+  }
   return RTC::RTC_OK;
 }
 

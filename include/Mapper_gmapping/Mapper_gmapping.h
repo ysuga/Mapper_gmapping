@@ -44,6 +44,9 @@
 
 #include "gmapping/gridfastslam/gridslamprocessor.h"
 #include "gmapping/sensor/sensor_base/sensor.h"
+
+
+
 /*!
  * @class Mapper_gmapping
  * @brief Mapper RTC using gmapping
@@ -499,20 +502,16 @@ class Mapper_gmapping
 	 GMapping::RangeSensor *m_pRangeSensor;
 	 GMapping::OdometrySensor *m_pOdometrySensor;
 
-	 bool m_isScanReceived;
-	 bool m_isOdomReceived;
-	 bool m_isInit;
-
 	 bool m_isMapStarted;
    bool m_isMapStopping;
 
 	 double m_lastScanTime;
-  bool m_isMapInitialized;
+   bool m_isMapInitialized;
+ 
  private:
+  //std::thread m_mapUpdateThread;
+  //std::mutex  m_mapUpdateMutex;
  public:
-	bool initMap(void);
-	bool updateMap(void);
-	bool updateOGMap(NAVIGATION::OccupancyGridMap &map);
 
  public:
 	NAVIGATION::OccupancyGridMap m_map;
@@ -526,6 +525,7 @@ class Mapper_gmapping
   }
 	bool isMapStarted() {return m_isMapStarted;}
 };
+
 
 
 extern "C"

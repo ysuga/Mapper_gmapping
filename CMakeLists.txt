@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 
+set(CMAKE_CXX_STANDARD 14)
 project(Mapper_gmapping)
 string(TOLOWER ${PROJECT_NAME} PROJECT_NAME_LOWER)
 include("${PROJECT_SOURCE_DIR}/cmake/utils.cmake")
