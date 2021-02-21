@@ -507,7 +507,7 @@ class Mapper_gmapping
    bool m_isMapStopping;
 
 	 double m_lastScanTime;
-
+  bool m_isMapInitialized;
  private:
  public:
 	bool initMap(void);

@@ -315,6 +315,8 @@ RTC::ReturnCode_t Mapper_gmapping::onActivated(RTC::UniqueId ec_id)
 	//m_map.config.origin.position.y = m_ymin;
 	//m_map.config.origin.heading = 0;
 	m_map.cells.length(m_map.config.sizeOfGridMap.width * m_map.config.sizeOfGridMap.height);
+
+  m_isMapInitialized = false;
   return RTC::RTC_OK;
 }
 
@@ -346,8 +348,9 @@ void setLaserToMatcher(GMapping::ScanMatcher& matcher, const RTC::RangeData& ran
                              pRangeSensor->getPose());
 
   delete[] laser_angles;
+  const double e = 0.1; // 0.1 mm
   matcher.setlaserMaxRange(range.config.maxRange);
-  matcher.setusableRange(range.config.maxRange);
+  matcher.setusableRange(range.config.maxRange-e);
   matcher.setgenerateMap(true);
 
 
@@ -451,14 +454,14 @@ RTC::ReturnCode_t Mapper_gmapping::onExecute(RTC::UniqueId ec_id)
 
   if(m_rangeIn.isNew()) {
 		m_rangeIn.read();
-		m_range.config.maxRange = 20.0;
-		m_range.config.minRange = 0.2;
+		//m_range.config.maxRange = 20.0;
+		//m_range.config.minRange = 0.2;
 		double scanTime = m_range.tm.sec + ((double)m_range.tm.nsec)/1000000000;
 		if(m_isInit && m_isMapStarted) {
 			if(!m_pGridSlamProcessor->processScan(convertRange(m_range, m_pRangeSensor, m_odometry))) {
 				//std::cerr << "Error: processScan Failed." << std::endl;
 			} else {
-				if(this->m_map_update_interval < (scanTime - m_lastScanTime)) {
+				if(!m_isMapInitialized || (this->m_map_update_interval < (scanTime - m_lastScanTime))) {
 					std::cout << "[Mapper_gmapping] Updating Map...." << std::endl;
 					if(updateMap()) {
 						std::cout << "[Mapper_gmapping] Update Success." << std::endl;
@@ -467,6 +470,7 @@ RTC::ReturnCode_t Mapper_gmapping::onExecute(RTC::UniqueId ec_id)
             std::cout << "[Mapper_gmapping] Update Map Failed." << std::endl;
 					}
 					m_lastScanTime = scanTime;
+          m_isMapInitialized = true;
 				}
 			}
       m_estimatedPose.data = convertPose(m_pGridSlamProcessor->getParticles()[m_pGridSlamProcessor->getBestParticleIndex()].pose);
